@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -10,6 +10,7 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
+  Button,
 } from '@mui/material';
 import {
   MusicNote,
@@ -18,14 +19,25 @@ import {
   People,
   BarChart,
   Shield,
+  Build,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { runBackendTests } from '../lib/backendTest.js';
 
 const Dashboard = () => {
   const { userProfile } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [testResults, setTestResults] = useState(null);
+  const [testing, setTesting] = useState(false);
+
+  const handleRunTests = async () => {
+    setTesting(true);
+    const results = await runBackendTests();
+    setTestResults(results);
+    setTesting(false);
+  };
 
   if (!userProfile) {
     return (
@@ -376,6 +388,36 @@ const Dashboard = () => {
                     </motion.div>
                   </Grid>
                 </Grid>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent>
+                <Typography variant="h5">Backend Status</Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleRunTests}
+                  disabled={testing}
+                  startIcon={testing ? <CircularProgress size={20} /> : <Build />}
+                >
+                  {testing ? 'Running Tests...' : 'Run Backend Tests'}
+                </Button>
+                {testResults && (
+                  <Box mt={2}>
+                    <Typography variant="h6">Test Results</Typography>
+                    {testResults.map((result, index) => (
+                      <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography
+                          sx={{
+                            color: result.status === 'PASS' ? 'success.main' : 'error.main',
+                          }}
+                        >
+                          {result.status}
+                        </Typography>
+                        <Typography sx={{ ml: 1 }}>{result.name}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </motion.div>

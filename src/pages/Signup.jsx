@@ -89,7 +89,8 @@ const Signup = () => {
     if (error) {
       setError(error.message);
     } else if (data.user) {
-      navigate('/kyc');
+      alert('Please check your email for a verification link.');
+      navigate('/login');
     }
 
     setLoading(false);

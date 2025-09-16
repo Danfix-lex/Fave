@@ -17,6 +17,7 @@ import KYC from './pages/KYC';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Upcoming from './pages/Upcoming';
+import EmailConfirmation from './pages/EmailConfirmation';
 import theme from './theme/theme';
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
             } />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/callback" element={<EmailConfirmation />} />
 
             {/* KYC route (protected but doesn't require KYC completion) */}
             <Route
