@@ -5,11 +5,22 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-r
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Validate environment variables
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.error('❌ Missing Supabase environment variables!');
-  console.error('Please create a .env file with:');
-  console.error('VITE_SUPABASE_URL=your_supabase_project_url');
-  console.error('VITE_SUPABASE_ANON_KEY=your_supabase_anon_key');
+const hasValidConfig = import.meta.env.VITE_SUPABASE_URL && 
+  import.meta.env.VITE_SUPABASE_ANON_KEY &&
+  import.meta.env.VITE_SUPABASE_URL !== 'https://your-project-ref.supabase.co' &&
+  import.meta.env.VITE_SUPABASE_ANON_KEY !== 'your-anon-key-here';
+
+if (!hasValidConfig) {
+  console.error('❌ Missing or invalid Supabase environment variables!');
+  console.error('Please create a .env file in your project root with:');
+  console.error('VITE_SUPABASE_URL=your_actual_supabase_project_url');
+  console.error('VITE_SUPABASE_ANON_KEY=your_actual_supabase_anon_key');
+  console.error('');
+  console.error('You can get these values from your Supabase project dashboard:');
+  console.error('1. Go to https://supabase.com/dashboard');
+  console.error('2. Select your project');
+  console.error('3. Go to Settings > API');
+  console.error('4. Copy the Project URL and anon public key');
 }
 
 // Create Supabase client with enhanced configuration
@@ -25,7 +36,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'fave-platform@1.0.0'
+      'X-Client-Info': 'fave-platform@1.0.0',
+      'Accept': 'application/json'
     }
   }
 });

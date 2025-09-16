@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Upload, AlertCircle, CheckCircle, User, Music, Camera } from 'lucide-react';
+import { 
+  Container, 
+  Box, 
+  Typography, 
+  CircularProgress, 
+  Paper, 
+  Stepper, 
+  Step, 
+  StepLabel, 
+  TextField, 
+  Button, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel, 
+  Avatar, 
+  Alert 
+} from '@mui/material';
+import { 
+  MusicNote, 
+  Person, 
+  CameraAlt, 
+  UploadFile, 
+  CheckCircle, 
+  ErrorOutline, 
+  Security 
+} from '@mui/icons-material';
 
 const KYC = () => {
   const { user, userProfile, updateProfile, loading } = useAuth();
@@ -20,13 +46,11 @@ const KYC = () => {
   const [photoPreview, setPhotoPreview] = useState('');
 
   useEffect(() => {
-    // Redirect if already completed KYC
     if (userProfile?.is_kyc_complete) {
       navigate('/dashboard');
       return;
     }
 
-    // Fetch distributors for creators
     if (userProfile?.role === 'creator') {
       fetchDistributors();
     }
@@ -60,13 +84,11 @@ const KYC = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please select a valid image file');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size must be less than 5MB');
       return;
@@ -75,18 +97,15 @@ const KYC = () => {
     try {
       const { supabase } = await import('../lib/supabase');
       
-      // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('profile-photos')
         .upload(fileName, file);
 
       if (error) throw error;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('profile-photos')
         .getPublicUrl(fileName);
@@ -107,7 +126,6 @@ const KYC = () => {
     setSubmitLoading(true);
     setError('');
 
-    // Validation
     if (!formData.full_name.trim()) {
       setError('Full name is required');
       setSubmitLoading(false);
@@ -126,14 +144,12 @@ const KYC = () => {
       return;
     }
 
-    // Prepare profile data
     const profileData = {
       full_name: formData.full_name.trim(),
       id_number: formData.id_number.trim(),
       profile_photo_url: formData.profile_photo_url || null,
     };
 
-    // Add creator-specific fields
     if (userProfile?.role === 'creator') {
       profileData.stage_name = formData.stage_name.trim() || null;
       profileData.distributor_id = formData.distributor_id;
@@ -152,9 +168,9 @@ const KYC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -163,240 +179,176 @@ const KYC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+    <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Paper elevation={12} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 4, background: 'rgba(255, 255, 255, 0.95)' }}>
+        <Box sx={{ textAlign: 'center', mb: 5 }}>
+          <Avatar sx={{ mx: 'auto', width: 64, height: 64, bgcolor: 'primary.light' }}>
             {userProfile.role === 'creator' ? (
-              <Music className="w-8 h-8 text-primary-600" />
+              <MusicNote sx={{ fontSize: 40, color: 'primary.main' }} />
             ) : (
-              <User className="w-8 h-8 text-primary-600" />
+              <Person sx={{ fontSize: 40, color: 'primary.main' }} />
             )}
-          </div>
-          <h1 className="text-3xl font-bold text-neutral-900">
+          </Avatar>
+          <Typography variant="h4" component="h1" sx={{ mt: 3, fontWeight: 700 }}>
             Complete Your Profile
-          </h1>
-          <p className="mt-2 text-lg text-neutral-600">
-            We need some additional information to verify your identity and set up your{' '}
-            <span className="font-medium text-primary-600">{userProfile.role}</span> account.
-          </p>
-        </div>
+          </Typography>
+          <Typography variant="h6" sx={{ mt: 1.5, color: 'text.secondary', fontWeight: 400 }}>
+            Verify your identity to secure your account as a{' '}
+            <Typography component="span" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              {userProfile.role}
+            </Typography>.
+          </Typography>
+        </Box>
 
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-600">Account Created</span>
-                  <span className="text-primary-600 font-medium">Profile Setup</span>
-                  <span className="text-neutral-400">Ready to Use</span>
-                </div>
-                <div className="mt-2 bg-neutral-200 rounded-full h-2">
-                  <div className="bg-primary-600 h-2 rounded-full w-1/2"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Box sx={{ mb: 5 }}>
+          <Stepper activeStep={1} alternativeLabel>
+            <Step>
+              <StepLabel>Account Created</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>Profile Setup</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>Ready to Use</StepLabel>
+            </Step>
+          </Stepper>
+        </Box>
 
-        {/* KYC Form */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
-                  <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                  <span className="text-sm text-red-600">{error}</span>
-                </div>
-              )}
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
+          {error && (
+            <Alert severity="error" icon={<ErrorOutline />} sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-              {/* Profile Photo Upload */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-3">
-                  Profile Photo
-                </label>
-                <div className="flex items-center space-x-6">
-                  <div className="w-24 h-24 bg-neutral-100 rounded-full flex items-center justify-center overflow-hidden">
-                    {photoPreview || formData.profile_photo_url ? (
-                      <img
-                        src={photoPreview || formData.profile_photo_url}
-                        alt="Profile preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Camera className="w-8 h-8 text-neutral-400" />
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="photo-upload" className="cursor-pointer">
-                      <div className="inline-flex items-center px-4 py-2 border border-neutral-300 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-colors">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Choose Photo
-                      </div>
-                    </label>
-                    <input
-                      id="photo-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="sr-only"
-                    />
-                    <p className="mt-1 text-xs text-neutral-500">
-                      PNG, JPG up to 5MB
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Full Name */}
-              <div>
-                <label htmlFor="full_name" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Full Name *
-                </label>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 4 }}>
+            <Avatar
+              src={photoPreview || formData.profile_photo_url}
+              sx={{ width: 96, height: 96, bgcolor: 'grey.200' }}
+            >
+              <CameraAlt sx={{ fontSize: 40 }} />
+            </Avatar>
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadFile />}
+              >
+                Choose Photo
                 <input
-                  id="full_name"
-                  name="full_name"
-                  type="text"
-                  required
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Enter your full legal name"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  hidden
                 />
-              </div>
+              </Button>
+              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                PNG, JPG up to 5MB
+              </Typography>
+            </Box>
+          </Box>
 
-              {/* Stage Name (Creator only) */}
-              {userProfile.role === 'creator' && (
-                <div>
-                  <label htmlFor="stage_name" className="block text-sm font-medium text-neutral-700 mb-1">
-                    Stage/Artist Name
-                  </label>
-                  <input
-                    id="stage_name"
-                    name="stage_name"
-                    type="text"
-                    value={formData.stage_name}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Your professional/stage name"
-                  />
-                  <p className="mt-1 text-sm text-neutral-500">
-                    The name you perform or publish under (optional)
-                  </p>
-                </div>
-              )}
+          <TextField
+            fullWidth
+            required
+            margin="normal"
+            id="full_name"
+            name="full_name"
+            label="Full Name"
+            value={formData.full_name}
+            onChange={handleChange}
+            placeholder="Enter your full legal name"
+          />
 
-              {/* Distributor Selection (Creator only) */}
-              {userProfile.role === 'creator' && (
-                <div>
-                  <label htmlFor="distributor_id" className="block text-sm font-medium text-neutral-700 mb-1">
-                    Music Distributor *
-                  </label>
-                  <select
-                    id="distributor_id"
-                    name="distributor_id"
-                    required
-                    value={formData.distributor_id}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">Select your distributor</option>
-                    {distributors.map((distributor) => (
-                      <option key={distributor.id} value={distributor.id}>
-                        {distributor.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Choose the platform where you distribute your music
-                  </p>
-                </div>
-              )}
+          {userProfile.role === 'creator' && (
+            <TextField
+              fullWidth
+              margin="normal"
+              id="stage_name"
+              name="stage_name"
+              label="Stage/Artist Name"
+              value={formData.stage_name}
+              onChange={handleChange}
+              placeholder="Your professional/stage name"
+              helperText="The name you perform or publish under (optional)"
+            />
+          )}
 
-              {/* ID Number */}
-              <div>
-                <label htmlFor="id_number" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Government ID Number *
-                </label>
-                <input
-                  id="id_number"
-                  name="id_number"
-                  type="text"
-                  required
-                  value={formData.id_number}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="National ID, passport, or driver's license number"
-                />
-                <p className="mt-1 text-sm text-neutral-500">
-                  Required for identity verification and compliance
-                </p>
-              </div>
+          {userProfile.role === 'creator' && (
+            <FormControl fullWidth required margin="normal">
+              <InputLabel id="distributor-label">Music Distributor</InputLabel>
+              <Select
+                labelId="distributor-label"
+                id="distributor_id"
+                name="distributor_id"
+                value={formData.distributor_id}
+                onChange={handleChange}
+                label="Music Distributor"
+              >
+                <MenuItem value="">
+                  <em>Select your distributor</em>
+                </MenuItem>
+                {distributors.map((distributor) => (
+                  <MenuItem key={distributor.id} value={distributor.id}>
+                    {distributor.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
-              {/* Email Display */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
-                  Email Address
-                </label>
-                <div className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-600">
-                  {user.email}
-                </div>
-              </div>
+          <TextField
+            fullWidth
+            required
+            margin="normal"
+            id="id_number"
+            name="id_number"
+            label="Government ID Number"
+            value={formData.id_number}
+            onChange={handleChange}
+            placeholder="National ID, passport, or driver's license number"
+            helperText="Required for identity verification and compliance"
+          />
 
-              {/* Role Display */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
-                  Account Type
-                </label>
-                <div className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-600 capitalize">
-                  {userProfile.role}
-                </div>
-              </div>
+          <TextField
+            fullWidth
+            disabled
+            margin="normal"
+            label="Email Address"
+            defaultValue={user.email}
+          />
 
-              {/* Submit Button */}
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={submitLoading}
-                  className="w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {submitLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Setting Up Profile...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Complete Profile Setup
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+          <TextField
+            fullWidth
+            disabled
+            margin="normal"
+            label="Account Type"
+            defaultValue={userProfile.role}
+            sx={{ textTransform: 'capitalize' }}
+          />
 
-        {/* Security Notice */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">
-                Your Information is Secure
-              </h3>
-              <p className="mt-1 text-sm text-blue-700">
-                All personal information is encrypted and stored securely. We use this data solely for identity verification and regulatory compliance.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          <Box sx={{ mt: 4 }}>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={submitLoading}
+              startIcon={submitLoading ? <CircularProgress size={20} /> : <CheckCircle />}
+            >
+              {submitLoading ? 'Setting Up Profile...' : 'Complete Profile Setup'}
+            </Button>
+          </Box>
+        </Box>
+
+        <Alert severity="info" icon={<Security />} sx={{ mt: 4 }}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Your Information is Secure</Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            All personal information is encrypted and stored securely. We use this data solely for identity verification and regulatory compliance.
+          </Typography>
+        </Alert>
+      </Paper>
+    </Container>
   );
 };
 

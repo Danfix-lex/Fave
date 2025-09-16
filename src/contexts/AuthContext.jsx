@@ -47,9 +47,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId) => {
     try {
+      console.log('Fetching user profile for user:', userId);
       const userResult = await userService.getUserById(userId);
+      console.log('userResult:', userResult);
       if (userResult.success && userResult.data) {
         const profileResult = await profileService.getProfile(userId);
+        console.log('profileResult:', profileResult);
         setUserProfile({
           ...userResult.data,
           profile: profileResult.success ? profileResult.data : null
@@ -62,23 +65,39 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, role) => {
     try {
+      console.log('Starting signup process for:', email, 'role:', role);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
 
-      if (error) throw error;
+      console.log('Supabase signup response:', { data, error });
+
+      if (error) {
+        console.error('Supabase signup error:', error);
+        throw error;
+      }
 
       if (data.user) {
+        console.log('User created, updating role...');
         // Create user record with role using service
         const userResult = await userService.updateUserRole(data.user.id, role);
         if (!userResult.success) {
           console.error('Error creating user record:', userResult.error);
+          // Don't throw here, as the user was created successfully in Supabase
+        } else {
+          console.log('User role updated successfully');
         }
       }
 
+      console.log('Signup completed successfully');
       return { data, error: null };
     } catch (error) {
+      console.error('Signup error:', error);
       return { data: null, error };
     }
   };
@@ -144,6 +163,11 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     refreshProfile: () => fetchUserProfile(user?.id),
   };
+
+  // Debug logging
+  console.log('AuthContext value:', value);
+  console.log('signUp in context:', signUp);
+  console.log('typeof signUp in context:', typeof signUp);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

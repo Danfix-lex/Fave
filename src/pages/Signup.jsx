@@ -47,10 +47,92 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signUp } = useAuth();
+  const auth = useAuth();
+  const { signUp } = auth || {};
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Debug logging
+  console.log('Auth context:', auth);
+  console.log('signUp function:', signUp);
+  console.log('typeof signUp:', typeof signUp);
+
+  // Show error if signUp is not available
+  if (!signUp || typeof signUp !== 'function') {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4,
+          px: 2,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Paper
+            elevation={24}
+            sx={{
+              p: { xs: 4, sm: 5 },
+              borderRadius: 4,
+              background: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h4" sx={{ color: 'error.main', mb: 2 }}>
+                ⚠️ Configuration Required
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'white', mb: 2 }}>
+                The signup function is not available. This is likely because Supabase is not properly configured.
+              </Typography>
+              <Box sx={{ 
+                textAlign: 'left', 
+                bgcolor: 'rgba(255, 255, 255, 0.1)', 
+                p: 2, 
+                borderRadius: 1, 
+                mb: 3,
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                  To fix this, please:
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'white' }} component="div">
+                  1. Create a <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 4px', borderRadius: '2px' }}>.env</code> file in your project root
+                  <br />
+                  2. Add your Supabase credentials:
+                  <br />
+                  <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 4px', borderRadius: '2px' }}>VITE_SUPABASE_URL=your_supabase_project_url</code>
+                  <br />
+                  <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 4px', borderRadius: '2px' }}>VITE_SUPABASE_ANON_KEY=your_supabase_anon_key</code>
+                  <br />
+                  3. Restart your development server
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                onClick={() => window.location.reload()}
+                sx={{
+                  background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
+                  },
+                }}
+              >
+                Refresh Page
+              </Button>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+    );
+  }
 
   const handleChange = (e) => {
     setFormData({
@@ -84,16 +166,38 @@ const Signup = () => {
       return;
     }
 
-    const { data, error } = await signUp(formData.email, formData.password, formData.role);
+    try {
+      // Check if signUp is a function
+      if (typeof signUp !== 'function') {
+        throw new Error('Signup function is not available. Please refresh the page and try again.');
+      }
 
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      alert('Please check your email for a verification link.');
-      navigate('/login');
+      // Add timeout to prevent hanging
+      const signupPromise = signUp(formData.email, formData.password, formData.role);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Signup timed out. Please try again.')), 30000)
+      );
+
+      const { data, error } = await Promise.race([signupPromise, timeoutPromise]);
+
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        // Redirect to email verification page with user info
+        navigate('/auth/verify-email', { 
+          state: { 
+            email: formData.email,
+            role: formData.role,
+            needsVerification: true 
+          } 
+        });
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError(error.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const containerVariants = {
@@ -393,6 +497,14 @@ const Signup = () => {
                 >
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </Button>
+
+                {loading && (
+                  <Box sx={{ textAlign: 'center', mt: 2 }}>
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      This may take a few moments. Please don't close this page.
+                    </Typography>
+                  </Box>
+                )}
 
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>

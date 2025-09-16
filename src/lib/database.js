@@ -21,18 +21,49 @@ export const userService = {
     }
   },
 
-  // Update user role
+  // Create or update user role
   async updateUserRole(userId, role) {
     try {
-      const { data, error } = await supabase
+      // First try to get the user
+      const { data: existingUser, error: getError } = await supabase
         .from('users')
-        .update({ role })
+        .select('*')
         .eq('id', userId)
-        .select()
         .single();
 
-      if (error) throw error;
-      return { success: true, data };
+      if (getError && getError.code !== 'PGRST116') {
+        // If it's not a "not found" error, throw it
+        throw getError;
+      }
+
+      if (existingUser) {
+        // User exists, update the role
+        const { data, error } = await supabase
+          .from('users')
+          .update({ role })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { success: true, data };
+      } else {
+        // User doesn't exist, create new user record
+        const { data, error } = await supabase
+          .from('users')
+          .insert([{
+            id: userId,
+            role: role,
+            is_kyc_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { success: true, data };
+      }
     } catch (error) {
       return { success: false, error: handleSupabaseError(error, 'updateUserRole') };
     }
