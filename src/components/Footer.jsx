@@ -159,13 +159,13 @@ const Footer = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Phone sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                     <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      +1 (555) 123-4567
+                      +234 9016614219
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <LocationOn sx={{ mr: 1, color: 'primary.main', fontSize: 20 }} />
                     <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      San Francisco, CA
+                      Lagos,Nigeria.
                     </Typography>
                   </Box>
                 </Box>
@@ -350,7 +350,7 @@ const Footer = () => {
                 variant="body2"
                 sx={{ color: 'rgba(255, 255, 255, 0.6)' }}
               >
-                © 2024 Fave. All rights reserved.
+                © 2025 Fave. All rights reserved.
               </Typography>
               <Typography
                 variant="body2"

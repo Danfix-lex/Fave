@@ -29,6 +29,7 @@ import {
   PersonAdd,
   MusicNote,
   People,
+  Google,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -48,7 +49,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
 
   const auth = useAuth();
-  const { signUp } = auth || {};
+  const { signUp, signInWithGoogle } = auth || {};
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -57,9 +58,11 @@ const Signup = () => {
   console.log('Auth context:', auth);
   console.log('signUp function:', signUp);
   console.log('typeof signUp:', typeof signUp);
+  console.log('signInWithGoogle function:', signInWithGoogle);
+  console.log('typeof signInWithGoogle:', typeof signInWithGoogle);
 
   // Show error if signUp is not available
-  if (!signUp || typeof signUp !== 'function') {
+  if (!signUp || typeof signUp !== 'function' || !signInWithGoogle || typeof signInWithGoogle !== 'function') {
     return (
       <Box
         sx={{
@@ -140,6 +143,25 @@ const Signup = () => {
       [e.target.name]: e.target.value,
     });
     setError('');
+  };
+
+  const handleGoogleSignup = async () => {
+    if (!formData.role) {
+      setError('Please select your role before continuing with Google');
+      return;
+    }
+    
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setError(error.message || 'An error occurred during Google sign-in');
+      }
+      // Note: The redirect to Google's OAuth page will happen automatically
+      // The user will be redirected back to the callback URL after authentication
+    } catch (error) {
+      console.error('Google signup error:', error);
+      setError(error.message || 'An unexpected error occurred. Please try again.');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -490,13 +512,63 @@ const Signup = () => {
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <PersonAdd />}
                   sx={{
                     py: 1.5,
-                    mb: 3,
+                    mb: 2,
                     fontSize: '1.1rem',
                     fontWeight: 600,
                   }}
                 >
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </Button>
+                
+                <Box sx={{ position: 'relative', mb: 3, mt: 1 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    my: 1
+                  }}>
+                    <Box sx={{ 
+                      flexGrow: 1, 
+                      height: '1px', 
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)' 
+                    }} />
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        mx: 2, 
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontWeight: 500 
+                      }}
+                    >
+                      OR
+                    </Typography>
+                    <Box sx={{ 
+                      flexGrow: 1, 
+                      height: '1px', 
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)' 
+                    }} />
+                  </Box>
+                  
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    size="large"
+                    disabled={loading}
+                    onClick={handleGoogleSignup}
+                    startIcon={<Google />}
+                    sx={{
+                      py: 1.5,
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                      color: 'white',
+                      '&:hover': {
+                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                      }
+                    }}
+                  >
+                    Sign up with Google
+                  </Button>
+                </Box>
 
                 {loading && (
                   <Box sx={{ textAlign: 'center', mt: 2 }}>
