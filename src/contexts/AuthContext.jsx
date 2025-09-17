@@ -18,28 +18,62 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fallback timeout to ensure loading is never stuck
+    const fallbackTimeout = setTimeout(() => {
+      console.log('Fallback timeout - forcing loading to false');
+      setLoading(false);
+    }, 2000);
+
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        await fetchUserProfile(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          // Set basic profile immediately
+          setUserProfile({
+            id: session.user.id,
+            email: session.user.email,
+            role: 'fan',
+            is_kyc_complete: false,
+            profile: null
+          });
+          console.log('Initial session - basic profile set');
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        clearTimeout(fallbackTimeout);
+        setLoading(false);
+        console.log('Initial loading set to false');
       }
-      setLoading(false);
     };
 
     getSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
       if (session?.user) {
         setUser(session.user);
-        await fetchUserProfile(session.user.id);
+        // Set a basic user profile immediately without database calls
+        setUserProfile({
+          id: session.user.id,
+          email: session.user.email,
+          role: 'fan',
+          is_kyc_complete: false,
+          profile: null
+        });
+        console.log('Basic user profile set immediately');
       } else {
         setUser(null);
         setUserProfile(null);
       }
+      
+      // Always set loading to false
       setLoading(false);
+      console.log('Loading set to false');
     });
 
     return () => subscription.unsubscribe();
@@ -48,18 +82,48 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async (userId) => {
     try {
       console.log('Fetching user profile for user:', userId);
-      const userResult = await userService.getUserById(userId);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+      );
+      
+      const profilePromise = userService.getUserById(userId);
+      const userResult = await Promise.race([profilePromise, timeoutPromise]);
+      
       console.log('userResult:', userResult);
+      
       if (userResult.success && userResult.data) {
-        const profileResult = await profileService.getProfile(userId);
-        console.log('profileResult:', profileResult);
+        // User exists in public.users
+        console.log('User found in public.users');
         setUserProfile({
           ...userResult.data,
-          profile: profileResult.success ? profileResult.data : null
+          profile: null // Profile will be fetched separately when needed
         });
+        console.log('User profile set successfully');
+      } else {
+        // User doesn't exist in public.users, create a basic user profile
+        console.log('User not found in public.users, creating basic profile');
+        setUserProfile({
+          id: userId,
+          email: user?.email || '',
+          role: 'fan',
+          is_kyc_complete: false,
+          profile: null
+        });
+        console.log('Basic user profile set successfully');
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Set a basic user profile even if there's an error
+      setUserProfile({
+        id: userId,
+        email: user?.email || '',
+        role: 'fan',
+        is_kyc_complete: false,
+        profile: null
+      });
+      console.log('Fallback user profile set after error');
     }
   };
 
@@ -80,12 +144,46 @@ export const AuthProvider = ({ children }) => {
 
       if (error) {
         console.error('Supabase signup error:', error);
+        
+        // Handle specific error cases
+        if (error.message.includes('User already registered')) {
+          throw new Error('An account with this email already exists. Please sign in instead.');
+        } else if (error.message.includes('Invalid email')) {
+          throw new Error('Please enter a valid email address.');
+        } else if (error.message.includes('Password should be at least')) {
+          throw new Error('Password must be at least 6 characters long.');
+        }
+        
         throw error;
       }
 
       if (data.user) {
-        console.log('User created, OTP sent to email. User record will be created after verification.');
-        // User record will be created in OTPVerification component after verification
+        console.log('User created, creating user record...');
+        
+        // Create user record in database immediately
+        try {
+          const { error: dbError } = await supabase
+            .from('users')
+            .insert([{
+              id: data.user.id,
+              email: data.user.email,
+              role: role || 'fan',
+              is_kyc_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+
+          if (dbError) {
+            console.error('Database error during user creation:', dbError);
+            // Don't fail the signup for database errors, but log them
+          } else {
+            console.log('User record created in database');
+          }
+        } catch (dbError) {
+          console.error('Database error during user creation:', dbError);
+        }
+        
+        console.log('User created, verification email sent');
       }
 
       console.log('Signup completed successfully');
@@ -156,6 +254,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await fetchUserProfile(user.id);
+    }
+  };
+
+  const fetchFullProfile = async () => {
+    if (!user?.id) return null;
+    
+    try {
+      const profileResult = await profileService.getProfile(user.id);
+      if (profileResult.success) {
+        setUserProfile(prev => ({
+          ...prev,
+          profile: profileResult.data
+        }));
+        return profileResult.data;
+      }
+    } catch (error) {
+      console.error('Error fetching full profile:', error);
+    }
+    return null;
+  };
+
   const value = {
     user,
     userProfile,
@@ -165,7 +287,8 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     signOut,
     updateProfile,
-    refreshProfile: () => fetchUserProfile(user?.id),
+    refreshProfile,
+    fetchFullProfile,
   };
 
   // Debug logging

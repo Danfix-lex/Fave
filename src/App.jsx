@@ -63,7 +63,6 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/verify-otp" element={<OTPVerification />} />
-
             {/* KYC route (protected but doesn't require KYC completion) */}
             <Route
               path="/kyc"

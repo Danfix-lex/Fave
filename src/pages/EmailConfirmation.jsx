@@ -46,7 +46,7 @@ const EmailConfirmation = () => {
           console.log('User verified and signed in:', data.session.user.email);
           setStatus('success');
           
-          // Create user record in database if it doesn't exist
+          // User record should already exist from signup, just update if needed
           try {
             const { error: dbError } = await supabase
               .from('users')
@@ -65,10 +65,10 @@ const EmailConfirmation = () => {
               console.error('Database error:', dbError);
               // Don't fail the flow for database errors
             } else {
-              console.log('User record created/updated in database');
+              console.log('User record updated in database');
             }
           } catch (dbError) {
-            console.error('Database error during user creation:', dbError);
+            console.error('Database error during user update:', dbError);
           }
 
           // Redirect to dashboard after a short delay
@@ -100,7 +100,7 @@ const EmailConfirmation = () => {
         console.log('User signed in and verified via auth state change');
         setStatus('success');
         
-        // Create user record in database
+        // User record should already exist from signup, just update if needed
         try {
           const { error: dbError } = await supabase
             .from('users')
@@ -118,10 +118,10 @@ const EmailConfirmation = () => {
           if (dbError) {
             console.error('Database error:', dbError);
           } else {
-            console.log('User record created/updated in database');
+            console.log('User record updated in database');
           }
         } catch (dbError) {
-          console.error('Database error during user creation:', dbError);
+          console.error('Database error during user update:', dbError);
         }
         
         setTimeout(() => {

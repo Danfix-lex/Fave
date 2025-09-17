@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -17,7 +18,16 @@ import {
   FormControl, 
   InputLabel, 
   Avatar, 
-  Alert 
+  Alert,
+  Grid,
+  Card,
+  CardContent,
+  useTheme,
+  useMediaQuery,
+  Divider,
+  Chip,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 import { 
   MusicNote, 
@@ -26,12 +36,23 @@ import {
   UploadFile, 
   CheckCircle, 
   ErrorOutline, 
-  Security 
+  Security,
+  Business,
+  Badge,
+  PhotoCamera,
+  ArrowForward,
+  ArrowBack,
+  Verified,
+  AccountBalance,
+  Fingerprint,
+  CloudUpload,
 } from '@mui/icons-material';
 
 const KYC = () => {
   const { user, userProfile, updateProfile, loading } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -44,6 +65,92 @@ const KYC = () => {
   const [error, setError] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState('');
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { y: 30, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+    hover: {
+      y: -5,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  // KYC Steps configuration - role specific
+  const getStepsForRole = (role) => {
+    const baseSteps = [
+      {
+        title: 'Personal Information',
+        description: 'Tell us about yourself',
+        icon: Person,
+        fields: ['full_name']
+      },
+      {
+        title: 'Identity Verification',
+        description: 'Verify your identity',
+        icon: Fingerprint,
+        fields: ['id_number']
+      },
+      {
+        title: 'Profile Photo',
+        description: 'Upload your profile picture',
+        icon: PhotoCamera,
+        fields: ['profile_photo_url']
+      }
+    ];
+
+    if (role === 'creator') {
+      baseSteps.splice(1, 0, {
+        title: 'Artist Profile',
+        description: 'Set up your artist identity',
+        icon: MusicNote,
+        fields: ['stage_name']
+      });
+      baseSteps.push({
+        title: 'Distribution Partner',
+        description: 'Select your distribution partner',
+        icon: Business,
+        fields: ['distributor_id']
+      });
+    }
+
+    return baseSteps;
+  };
+
+  const steps = getStepsForRole(userProfile?.role);
 
   useEffect(() => {
     if (userProfile?.is_kyc_complete) {
@@ -99,12 +206,12 @@ const KYC = () => {
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
+      
+      const { error: uploadError } = await supabase.storage
         .from('profile-photos')
         .upload(fileName, file);
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
         .from('profile-photos')
@@ -126,50 +233,215 @@ const KYC = () => {
     setSubmitLoading(true);
     setError('');
 
-    if (!formData.full_name.trim()) {
-      setError('Full name is required');
+    try {
+      const profileData = {
+        full_name: formData.full_name.trim(),
+        id_number: formData.id_number.trim(),
+        profile_photo_url: formData.profile_photo_url || null,
+      };
+
+      if (userProfile?.role === 'creator') {
+        profileData.stage_name = formData.stage_name.trim() || null;
+        profileData.distributor_id = formData.distributor_id;
+      }
+
+      const result = await updateProfile(profileData);
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+    } finally {
       setSubmitLoading(false);
-      return;
+    }
+  };
+
+  const handleNext = () => {
+    setActiveStep((prevStep) => prevStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+  };
+
+  const isStepValid = (stepIndex) => {
+    const step = steps[stepIndex];
+    return step.fields.every(field => {
+      // Skip distributor validation for non-creators
+      if (field === 'distributor_id' && userProfile?.role !== 'creator') return true;
+      // Skip stage_name validation for non-creators
+      if (field === 'stage_name' && userProfile?.role !== 'creator') return true;
+      return formData[field] && formData[field].trim() !== '';
+    });
+  };
+
+  const renderStepContent = (stepIndex) => {
+    const step = steps[stepIndex];
+    const stepTitle = step.title.toLowerCase();
+    
+    if (stepTitle.includes('personal information')) {
+      return (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Full Name"
+              name="full_name"
+              value={formData.full_name}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Person color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 3 }}
+            />
+          </Grid>
+        </Grid>
+      );
     }
 
-    if (!formData.id_number.trim()) {
-      setError('ID number is required');
-      setSubmitLoading(false);
-      return;
+    if (stepTitle.includes('artist profile')) {
+      return (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Stage Name"
+              name="stage_name"
+              value={formData.stage_name}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MusicNote color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              helperText="Your artist name or stage name"
+            />
+          </Grid>
+        </Grid>
+      );
     }
 
-    if (userProfile?.role === 'creator' && !formData.distributor_id) {
-      setError('Please select your distributor');
-      setSubmitLoading(false);
-      return;
+    if (stepTitle.includes('identity verification')) {
+      return (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Government ID Number"
+              name="id_number"
+              value={formData.id_number}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Badge color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+              helperText="Enter your passport, driver's license, or national ID number"
+            />
+          </Grid>
+        </Grid>
+      );
     }
 
-    const profileData = {
-      full_name: formData.full_name.trim(),
-      id_number: formData.id_number.trim(),
-      profile_photo_url: formData.profile_photo_url || null,
-    };
-
-    if (userProfile?.role === 'creator') {
-      profileData.stage_name = formData.stage_name.trim() || null;
-      profileData.distributor_id = formData.distributor_id;
+    if (stepTitle.includes('profile photo')) {
+      return (
+        <Box textAlign="center">
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="photo-upload"
+            type="file"
+            onChange={handlePhotoUpload}
+          />
+          <label htmlFor="photo-upload">
+            <Button
+              variant="outlined"
+              component="span"
+              startIcon={<PhotoCamera />}
+              size="large"
+              sx={{ mb: 3 }}
+            >
+              Upload Profile Photo
+            </Button>
+          </label>
+          {photoPreview && (
+            <Box mt={2}>
+              <Avatar
+                src={photoPreview}
+                sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                Photo uploaded successfully
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Upload a clear photo of yourself. This will be your profile picture.
+          </Typography>
+        </Box>
+      );
     }
 
-    const { error } = await updateProfile(profileData);
-
-    if (error) {
-      setError(error.message);
-    } else {
-      navigate('/dashboard');
+    if (stepTitle.includes('distribution partner')) {
+      return (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel>Distribution Partner</InputLabel>
+              <Select
+                name="distributor_id"
+                value={formData.distributor_id}
+                onChange={handleChange}
+                label="Distribution Partner"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <Business color="primary" />
+                  </InputAdornment>
+                }
+              >
+                {distributors.map((distributor) => (
+                  <MenuItem key={distributor.id} value={distributor.id}>
+                    {distributor.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      );
     }
 
-    setSubmitLoading(false);
+    return null;
   };
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <CircularProgress />
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="100vh"
+        sx={{ 
+          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: 'white' }} />
       </Box>
     );
   }
@@ -179,176 +451,192 @@ const KYC = () => {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={12} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 4, background: 'rgba(255, 255, 255, 0.95)' }}>
-        <Box sx={{ textAlign: 'center', mb: 5 }}>
-          <Avatar sx={{ mx: 'auto', width: 64, height: 64, bgcolor: 'primary.light' }}>
-            {userProfile.role === 'creator' ? (
-              <MusicNote sx={{ fontSize: 40, color: 'primary.main' }} />
-            ) : (
-              <Person sx={{ fontSize: 40, color: 'primary.main' }} />
-            )}
-          </Avatar>
-          <Typography variant="h4" component="h1" sx={{ mt: 3, fontWeight: 700 }}>
-            Complete Your Profile
-          </Typography>
-          <Typography variant="h6" sx={{ mt: 1.5, color: 'text.secondary', fontWeight: 400 }}>
-            Verify your identity to secure your account as a{' '}
-            <Typography component="span" sx={{ fontWeight: 600, color: 'primary.main' }}>
-              {userProfile.role}
-            </Typography>.
-          </Typography>
-        </Box>
-
-        <Box sx={{ mb: 5 }}>
-          <Stepper activeStep={1} alternativeLabel>
-            <Step>
-              <StepLabel>Account Created</StepLabel>
-            </Step>
-            <Step>
-              <StepLabel>Profile Setup</StepLabel>
-            </Step>
-            <Step>
-              <StepLabel>Ready to Use</StepLabel>
-            </Step>
-          </Stepper>
-        </Box>
-
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
-          {error && (
-            <Alert severity="error" icon={<ErrorOutline />} sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 4 }}>
-            <Avatar
-              src={photoPreview || formData.profile_photo_url}
-              sx={{ width: 96, height: 96, bgcolor: 'grey.200' }}
-            >
-              <CameraAlt sx={{ fontSize: 40 }} />
-            </Avatar>
-            <Box>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<UploadFile />}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        position: 'relative',
+        zIndex: 1,
+        py: { xs: 8, md: 12 },
+      }}
+    >
+      <Container maxWidth="lg">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Header Section */}
+          <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 } }}>
+            <motion.div variants={itemVariants}>
+              <Typography
+                variant={isMobile ? 'h3' : 'h2'}
+                component="h1"
+                sx={{
+                  fontWeight: 700,
+                  mb: 3,
+                  color: 'white',
+                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                }}
               >
-                Choose Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  hidden
-                />
-              </Button>
-              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                PNG, JPG up to 5MB
+                Complete Your KYC
               </Typography>
-            </Box>
-          </Box>
-
-          <TextField
-            fullWidth
-            required
-            margin="normal"
-            id="full_name"
-            name="full_name"
-            label="Full Name"
-            value={formData.full_name}
-            onChange={handleChange}
-            placeholder="Enter your full legal name"
-          />
-
-          {userProfile.role === 'creator' && (
-            <TextField
-              fullWidth
-              margin="normal"
-              id="stage_name"
-              name="stage_name"
-              label="Stage/Artist Name"
-              value={formData.stage_name}
-              onChange={handleChange}
-              placeholder="Your professional/stage name"
-              helperText="The name you perform or publish under (optional)"
-            />
-          )}
-
-          {userProfile.role === 'creator' && (
-            <FormControl fullWidth required margin="normal">
-              <InputLabel id="distributor-label">Music Distributor</InputLabel>
-              <Select
-                labelId="distributor-label"
-                id="distributor_id"
-                name="distributor_id"
-                value={formData.distributor_id}
-                onChange={handleChange}
-                label="Music Distributor"
+              <Typography
+                variant={isMobile ? 'h6' : 'h5'}
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontWeight: 400,
+                  mb: 4,
+                }}
               >
-                <MenuItem value="">
-                  <em>Select your distributor</em>
-                </MenuItem>
-                {distributors.map((distributor) => (
-                  <MenuItem key={distributor.id} value={distributor.id}>
-                    {distributor.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-
-          <TextField
-            fullWidth
-            required
-            margin="normal"
-            id="id_number"
-            name="id_number"
-            label="Government ID Number"
-            value={formData.id_number}
-            onChange={handleChange}
-            placeholder="National ID, passport, or driver's license number"
-            helperText="Required for identity verification and compliance"
-          />
-
-          <TextField
-            fullWidth
-            disabled
-            margin="normal"
-            label="Email Address"
-            defaultValue={user.email}
-          />
-
-          <TextField
-            fullWidth
-            disabled
-            margin="normal"
-            label="Account Type"
-            defaultValue={userProfile.role}
-            sx={{ textTransform: 'capitalize' }}
-          />
-
-          <Box sx={{ mt: 4 }}>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={submitLoading}
-              startIcon={submitLoading ? <CircularProgress size={20} /> : <CheckCircle />}
-            >
-              {submitLoading ? 'Setting Up Profile...' : 'Complete Profile Setup'}
-            </Button>
+                {userProfile?.role === 'creator' 
+                  ? 'Verify your identity and set up your artist profile' 
+                  : 'Verify your identity to unlock all features'
+                }
+              </Typography>
+              
+              {/* Progress Indicator */}
+              <Box sx={{ maxWidth: 600, mx: 'auto' }}>
+                <Stepper activeStep={activeStep} alternativeLabel>
+                  {steps.map((step, index) => (
+                    <Step key={step.title}>
+                      <StepLabel
+                        StepIconComponent={({ active, completed }) => (
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: completed 
+                                ? '#4caf50' 
+                                : active 
+                                  ? '#2196f3' 
+                                  : 'rgba(255, 255, 255, 0.3)',
+                              color: 'white',
+                            }}
+                          >
+                            {completed ? <CheckCircle /> : React.createElement(step.icon)}
+                          </Box>
+                        )}
+                      >
+                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>
+                          {step.title}
+                        </Typography>
+                      </StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              </Box>
+            </motion.div>
           </Box>
-        </Box>
 
-        <Alert severity="info" icon={<Security />} sx={{ mt: 4 }}>
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Your Information is Secure</Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            All personal information is encrypted and stored securely. We use this data solely for identity verification and regulatory compliance.
-          </Typography>
-        </Alert>
-      </Paper>
-    </Container>
+          {/* Main Content */}
+          <motion.div variants={cardVariants}>
+            <Card
+              elevation={24}
+              sx={{
+                borderRadius: 4,
+                background: 'rgba(15, 23, 42, 0.9)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+              }}
+            >
+              <CardContent sx={{ p: 6 }}>
+                {/* Current Step Header */}
+                <Box textAlign="center" mb={4}>
+                  <Avatar
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      mx: 'auto',
+                      mb: 3,
+                      background: 'linear-gradient(135deg, #2196f3, #21cbf3)',
+                    }}
+                  >
+                    {React.createElement(steps[activeStep].icon, { sx: { fontSize: 40 } })}
+                  </Avatar>
+                  <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 600, color: 'white' }}>
+                    {steps[activeStep].title}
+                  </Typography>
+                  <Typography variant="h6" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.8)' }}>
+                    {steps[activeStep].description}
+                  </Typography>
+                </Box>
+
+                {/* Error Alert */}
+                {error && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ mb: 4, borderRadius: 2 }}
+                    icon={<ErrorOutline />}
+                  >
+                    {error}
+                  </Alert>
+                )}
+
+                {/* Step Content */}
+                <Box component="form" onSubmit={handleSubmit}>
+                  {renderStepContent(activeStep)}
+
+                  {/* Navigation Buttons */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
+                    <Button
+                      disabled={activeStep === 0}
+                      onClick={handleBack}
+                      startIcon={<ArrowBack />}
+                      sx={{ minWidth: 120 }}
+                    >
+                      Back
+                    </Button>
+
+                    {activeStep === steps.length - 1 ? (
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        size="large"
+                        disabled={submitLoading || !isStepValid(activeStep)}
+                        startIcon={submitLoading ? <CircularProgress size={20} /> : <Verified />}
+                        sx={{
+                          minWidth: 160,
+                          py: 1.5,
+                          background: 'linear-gradient(135deg, #4caf50, #45a049)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #45a049, #3d8b40)',
+                          },
+                        }}
+                      >
+                        {submitLoading ? 'Completing...' : 'Complete KYC'}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={handleNext}
+                        disabled={!isStepValid(activeStep)}
+                        endIcon={<ArrowForward />}
+                        sx={{
+                          minWidth: 120,
+                          py: 1.5,
+                          background: 'linear-gradient(135deg, #2196f3, #1976d2)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #1976d2, #1565c0)',
+                          },
+                        }}
+                      >
+                        Next
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </Container>
+    </Box>
   );
 };
 

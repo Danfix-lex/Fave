@@ -53,15 +53,24 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    const { data, error } = await signIn(formData.email, formData.password);
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
 
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      navigate(from, { replace: true });
+      if (error) {
+        console.error('Sign in error:', error);
+        setError(error.message || 'Sign in failed. Please try again.');
+      } else if (data?.user) {
+        console.log('Sign in successful:', data.user.email);
+        navigate(from, { replace: true });
+      } else {
+        setError('Sign in failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Unexpected error during sign in:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const containerVariants = {
