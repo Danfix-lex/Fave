@@ -32,8 +32,8 @@ import {
   Lock,
   Verified,
 } from '@mui/icons-material';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { getZkLoginNonce } from '@mysten/sui.js/zklogin';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { generateNonce } from '@mysten/sui/zklogin';
 import { useAuth } from '../contexts/AuthContext';
 
 const WalletCreation = ({ userProfile }) => {
@@ -171,7 +171,7 @@ const WalletCreation = ({ userProfile }) => {
       setEphemeralKey({ publicKey, secretKey });
       
       // Generate real nonce for ZK Login
-      const nonceValue = getZkLoginNonce(publicKey, { maxEpoch: 1000 });
+      const nonceValue = generateNonce(publicKey, { maxEpoch: 1000 });
       setNonce(nonceValue);
       
       console.log('Real cryptographic keys generated:', { 
