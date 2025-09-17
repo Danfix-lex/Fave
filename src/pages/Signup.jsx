@@ -1,37 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  IconButton,
-  InputAdornment,
-  Alert,
-  CircularProgress,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
-  FormLabel,
-  Card,
-  CardContent,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  ErrorOutline,
-  PersonAdd,
-  MusicNote,
-  People,
-  Google,
-} from '@mui/icons-material';
+import { Container, Paper, TextField, Button, Typography, Box, IconButton, InputAdornment, Alert, CircularProgress, Radio, RadioGroup,
+  FormControlLabel, FormControl, FormLabel, Card, CardContent, useTheme, useMediaQuery } from '@mui/material';
+import { Visibility, VisibilityOff, ErrorOutline, PersonAdd, MusicNote, People, Google } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -49,7 +23,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
 
   const auth = useAuth();
-  const { signUp, signInWithGoogle } = auth || {};
+  const { signUp, signInWithGoogle } = auth;
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -152,7 +126,7 @@ const Signup = () => {
     }
     
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle(formData.role);
       if (error) {
         setError(error.message || 'An error occurred during Google sign-in');
       }
