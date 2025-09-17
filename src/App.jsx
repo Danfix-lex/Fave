@@ -12,7 +12,8 @@ import BackendStatus from './components/BackendStatus';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import OTPVerification from './pages/OTPVerification';
+import VerifyEmail from './pages/VerifyEmail';
+import EmailConfirmation from './pages/EmailConfirmation';
 import Dashboard from './pages/Dashboard';
 import KYC from './pages/KYC';
 import About from './pages/About';
@@ -60,7 +61,8 @@ function App() {
             } />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/auth/verify-otp" element={<OTPVerification />} />
+            <Route path="/auth/verify-email" element={<VerifyEmail />} />
+            <Route path="/auth/callback" element={<EmailConfirmation />} />
 
             {/* KYC route (protected but doesn't require KYC completion) */}
             <Route

@@ -200,9 +200,14 @@ const Signup = () => {
       if (error) {
         console.error('Signup error details:', error);
         setError(error.message || 'Signup failed. Please try again.');
+        
+        // If user already exists, show sign in option
+        if (error.message.includes('already exists')) {
+          setError(error.message + ' Click "Sign In" below to access your account.');
+        }
       } else if (data && data.user) {
-        // Redirect to OTP verification page
-        navigate('/auth/verify-otp', { 
+        // Redirect to email verification page
+        navigate('/auth/verify-email', { 
           state: { 
             email: formData.email,
             role: formData.role
