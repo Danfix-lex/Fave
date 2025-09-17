@@ -107,14 +107,14 @@ const Contact = () => {
       icon: Phone,
       title: 'Call Us',
       description: 'Mon-Fri from 8am to 5pm',
-      contact: '+1 (555) 123-4567',
+      contact: '+234 9016614219',
       color: 'success',
     },
     {
       icon: LocationOn,
       title: 'Visit Us',
       description: 'Come say hello at our office',
-      contact: 'San Francisco, CA',
+      contact: 'Lagos, Nigeria',
       color: 'secondary',
     },
   ];
