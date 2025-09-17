@@ -1,62 +1,48 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Environment variables with fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-ref.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key-here';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validate environment variables
-const hasValidConfig = import.meta.env.VITE_SUPABASE_URL && 
-  import.meta.env.VITE_SUPABASE_ANON_KEY &&
-  import.meta.env.VITE_SUPABASE_URL !== 'https://your-project-ref.supabase.co' &&
-  import.meta.env.VITE_SUPABASE_ANON_KEY !== 'your-anon-key-here';
+const hasValidConfig = Boolean(supabaseUrl && supabaseAnonKey);
 
 if (!hasValidConfig) {
   console.error('❌ Missing or invalid Supabase environment variables!');
-  console.error('Please create a .env file in your project root with:');
-  console.error('VITE_SUPABASE_URL=your_actual_supabase_project_url');
-  console.error('VITE_SUPABASE_ANON_KEY=your_actual_supabase_anon_key');
-  console.error('');
-  console.error('You can get these values from your Supabase project dashboard:');
-  console.error('1. Go to https://supabase.com/dashboard');
-  console.error('2. Select your project');
-  console.error('3. Go to Settings > API');
-  console.error('4. Copy the Project URL and anon public key');
+  // Option A: throw to fail fast
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+  // Option B: return a noop client or skip export (choose one approach)
 }
 
-// Create Supabase client with enhanced configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
   },
-  db: {
-    schema: 'public'
-  },
+  db: { schema: 'public' },
   global: {
     headers: {
       'X-Client-Info': 'fave-platform@1.0.0',
-      'Accept': 'application/json'
-    }
-  }
+      Accept: 'application/json',
+    },
+  },
 });
 
 // Test connection function
 export const testSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase
-      .from('distributors')
-      .select('count')
-      .limit(1);
-    
+    const { error, count } = await supabase
+      .from('distributors') // ensure this table exists
+      .select('*', { count: 'exact', head: true });
+
     if (error) {
       console.error('❌ Supabase connection failed:', error);
       return { success: false, error };
     }
-    
+
     console.log('✅ Supabase connection successful');
-    return { success: true, data };
+    return { success: true, data: { count } };
   } catch (error) {
     console.error('❌ Supabase connection error:', error);
     return { success: false, error };
@@ -85,4 +71,58 @@ export const handleSupabaseError = (error, operation = 'operation') => {
   }
   
   return { message: error.message || 'An unexpected error occurred', code: 'UNKNOWN' };
+};
+
+// Resolve an OAuth redirect URL
+const getOAuthRedirectUrl = () => {
+  try {
+    const configuredUrl = import.meta.env.VITE_SITE_REDIRECT_URL;
+    if (configuredUrl) {
+      return configuredUrl.replace(/\/$/, '') + '/';
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin + '/';
+    }
+  } catch (_) {
+    // ignore and fall through
+  }
+  return undefined;
+};
+
+// Start Google OAuth sign-in/signup flow
+export const signInWithGoogle = async (role) => {
+  try {
+    const baseUrl = getOAuthRedirectUrl();
+    const cleanBase = baseUrl ? baseUrl.replace(/\/$/, '') : undefined;
+    const redirectTo = cleanBase ? `${cleanBase}/auth/callback${role ? `?role=${encodeURIComponent(role)}` : ''}` : undefined;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://krjqftbmkeomwjnqeira.supabase.co/auth/v1/callback',
+        queryParams: { access_type: 'offline', prompt: 'consent' }
+      }
+    });
+
+    if (error) {
+      return { success: false, error: handleSupabaseError(error, 'google sign-in') };
+    }
+
+    // In browser, this typically triggers a redirect. `data.url` contains the target URL.
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error, 'google sign-in') };
+  }
+};
+
+// Initialize session after returning from OAuth redirect
+export const initializeAuthFromRedirect = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      return { success: false, error: handleSupabaseError(error, 'initialize session') };
+    }
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error, 'initialize session') };
+  }
 };

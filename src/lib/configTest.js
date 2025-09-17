@@ -12,11 +12,10 @@ export const testSupabaseConfig = async () => {
     
     console.log('✅ Supabase client initialized');
     
-    // Test 2: Test database connection
-    const { data, error } = await supabase
+    // Test 2: Test database connection using count header
+    const { error } = await supabase
       .from('distributors')
-      .select('count')
-      .limit(1);
+      .select('*', { count: 'exact', head: true });
     
     if (error) {
       throw new Error(`Database connection failed: ${error.message}`);
@@ -25,7 +24,7 @@ export const testSupabaseConfig = async () => {
     console.log('✅ Database connection successful');
     
     // Test 3: Test authentication system
-    const { data: authData, error: authError } = await supabase.auth.getSession();
+    const { error: authError } = await supabase.auth.getSession();
     
     if (authError) {
       throw new Error(`Authentication system error: ${authError.message}`);
