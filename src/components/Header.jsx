@@ -32,6 +32,8 @@ import {
   Login as LoginIcon,
   PersonAdd,
 } from '@mui/icons-material';
+import Avatar from '@mui/material/Avatar';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const theme = useTheme();
@@ -154,6 +156,12 @@ const Header = () => {
     </Box>
   );
 
+  const { user, signOut } = useAuth();
+  const userAvatarUrl = user?.user_metadata?.avatar_url
+    || user?.user_metadata?.picture
+    || user?.identities?.[0]?.identity_data?.picture
+    || null;
+
   return (
     <>
       <AppBar 
@@ -215,31 +223,53 @@ const Header = () => {
             ))}
           </Box>
 
-          {/* Desktop Auth Buttons */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-            <Button
-              component={Link}
-              to="/login"
-              startIcon={<LoginIcon />}
-              color="inherit"
-              sx={{ fontWeight: 500 }}
-            >
-              Sign In
-            </Button>
-            <Button
-              component={Link}
-              to="/signup"
-              variant="contained"
-              startIcon={<PersonAdd />}
-              sx={{
-                background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
-                },
-              }}
-            >
-              Sign Up
-            </Button>
+          {/* Desktop Auth Buttons / User Avatar */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
+            {!user ? (
+              <>
+                <Button
+                  component={Link}
+                  to="/login"
+                  startIcon={<LoginIcon />}
+                  color="inherit"
+                  sx={{ fontWeight: 500 }}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  component={Link}
+                  to="/signup"
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  sx={{
+                    background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
+                    },
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </>
+            ) : (
+              <>
+                <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
+                  <Avatar src={userAvatarUrl || undefined} alt={user?.email || 'User'} />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/dashboard'); }}>Dashboard</MenuItem>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Profile</MenuItem>
+                  <Divider />
+                  <MenuItem onClick={async () => { handleMenuClose(); await signOut(); navigate('/'); }}>Sign out</MenuItem>
+                </Menu>
+              </>
+            )}
           </Box>
         </Toolbar>
       </AppBar>

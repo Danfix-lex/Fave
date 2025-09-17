@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, signInWithGoogle as signInWithGoogleHelper } from '../lib/supabase';
 import { userService, profileService } from '../lib/database';
 
 const AuthContext = createContext({});
@@ -110,21 +110,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signInWithGoogle = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      return { data: null, error };
-    }
+  const signInWithGoogle = async (role) => {
+    return await signInWithGoogleHelper(role);
   };
 
   const signOut = async () => {

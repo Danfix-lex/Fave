@@ -72,3 +72,57 @@ export const handleSupabaseError = (error, operation = 'operation') => {
   
   return { message: error.message || 'An unexpected error occurred', code: 'UNKNOWN' };
 };
+
+// Resolve an OAuth redirect URL
+const getOAuthRedirectUrl = () => {
+  try {
+    const configuredUrl = import.meta.env.VITE_SITE_REDIRECT_URL;
+    if (configuredUrl) {
+      return configuredUrl.replace(/\/$/, '') + '/';
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin + '/';
+    }
+  } catch (_) {
+    // ignore and fall through
+  }
+  return undefined;
+};
+
+// Start Google OAuth sign-in/signup flow
+export const signInWithGoogle = async (role) => {
+  try {
+    const baseUrl = getOAuthRedirectUrl();
+    const cleanBase = baseUrl ? baseUrl.replace(/\/$/, '') : undefined;
+    const redirectTo = cleanBase ? `${cleanBase}/auth/callback${role ? `?role=${encodeURIComponent(role)}` : ''}` : undefined;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://krjqftbmkeomwjnqeira.supabase.co/auth/v1/callback',
+        queryParams: { access_type: 'offline', prompt: 'consent' }
+      }
+    });
+
+    if (error) {
+      return { success: false, error: handleSupabaseError(error, 'google sign-in') };
+    }
+
+    // In browser, this typically triggers a redirect. `data.url` contains the target URL.
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error, 'google sign-in') };
+  }
+};
+
+// Initialize session after returning from OAuth redirect
+export const initializeAuthFromRedirect = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      return { success: false, error: handleSupabaseError(error, 'initialize session') };
+    }
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: handleSupabaseError(error, 'initialize session') };
+  }
+};
