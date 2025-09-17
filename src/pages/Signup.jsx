@@ -194,25 +194,24 @@ const Signup = () => {
         throw new Error('Signup function is not available. Please refresh the page and try again.');
       }
 
-      // Add timeout to prevent hanging
-      const signupPromise = signUp(formData.email, formData.password, formData.role);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Signup timed out. Please try again.')), 30000)
-      );
-
-      const { data, error } = await Promise.race([signupPromise, timeoutPromise]);
+      // Call signup function directly
+      const { data, error } = await signUp(formData.email, formData.password, formData.role);
 
       if (error) {
-        setError(error.message);
-      } else if (data.user) {
-        // Redirect to email verification page with user info
-        navigate('/auth/verify-email', { 
+        console.error('Signup error details:', error);
+        setError(error.message || 'Signup failed. Please try again.');
+      } else if (data && data.user) {
+        // Redirect to OTP verification page
+        navigate('/auth/verify-otp', { 
           state: { 
             email: formData.email,
-            role: formData.role,
-            needsVerification: true 
+            role: formData.role
           } 
         });
+      } else {
+        // Handle case where signup succeeded but no user data returned
+        console.log('Signup completed but no user data returned');
+        setError('Signup completed but there was an issue. Please try again.');
       }
     } catch (error) {
       console.error('Signup error:', error);

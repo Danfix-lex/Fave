@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Starting signup process for:', email, 'role:', role);
       
+      // First, create user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -83,15 +84,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (data.user) {
-        console.log('User created, updating role...');
-        // Create user record with role using service
-        const userResult = await userService.updateUserRole(data.user.id, role);
-        if (!userResult.success) {
-          console.error('Error creating user record:', userResult.error);
-          // Don't throw here, as the user was created successfully in Supabase
-        } else {
-          console.log('User role updated successfully');
-        }
+        console.log('User created, OTP sent to email. User record will be created after verification.');
+        // User record will be created in OTPVerification component after verification
       }
 
       console.log('Signup completed successfully');
@@ -146,6 +140,10 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       // Use profile service to upsert profile
       const profileResult = await profileService.upsertProfile({
         user_id: user.id,
@@ -166,6 +164,7 @@ export const AuthProvider = ({ children }) => {
       await fetchUserProfile(user.id);
       return { error: null };
     } catch (error) {
+      console.error('Error updating profile:', error);
       return { error };
     }
   };

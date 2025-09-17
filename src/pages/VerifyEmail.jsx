@@ -45,9 +45,19 @@ const VerifyEmail = () => {
       setEmail(location.state.email);
       setRole(location.state.role);
     } else {
-      // If no state, redirect to signup
-      navigate('/signup');
-      return;
+      // If no state, try to get from current session
+      const getCurrentUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          setEmail(session.user.email);
+          setRole('fan'); // Default role
+        } else {
+          // If no session, redirect to signup
+          navigate('/signup');
+          return;
+        }
+      };
+      getCurrentUser();
     }
 
     // Check if user is already verified

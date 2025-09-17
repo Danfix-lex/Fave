@@ -31,26 +31,62 @@ const EmailConfirmation = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the current session to check if user is verified
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Handle the auth callback from URL hash
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error('Auth callback error:', error);
           setError(error.message);
           setStatus('error');
           return;
         }
 
-        if (session?.user?.email_confirmed_at) {
+        // If we have a session and user is verified, redirect to dashboard
+        if (data.session?.user?.email_confirmed_at) {
+          console.log('User verified and signed in:', data.session.user.email);
           setStatus('success');
+          
+          // Create user record in database if it doesn't exist
+          try {
+            const { error: dbError } = await supabase
+              .from('users')
+              .upsert([{
+                id: data.session.user.id,
+                email: data.session.user.email,
+                role: 'fan', // Default role, will be updated in KYC
+                is_kyc_complete: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }], {
+                onConflict: 'id'
+              });
+
+            if (dbError) {
+              console.error('Database error:', dbError);
+              // Don't fail the flow for database errors
+            } else {
+              console.log('User record created/updated in database');
+            }
+          } catch (dbError) {
+            console.error('Database error during user creation:', dbError);
+          }
+
           // Redirect to dashboard after a short delay
           setTimeout(() => {
             navigate('/dashboard');
           }, 2000);
         } else {
-          setError('Email verification failed. Please try again.');
-          setStatus('error');
+          // Check if user exists but not verified
+          if (data.session?.user && !data.session.user.email_confirmed_at) {
+            setError('Email not yet verified. Please check your email and click the verification link.');
+            setStatus('error');
+          } else {
+            setError('No active session. Please sign up again.');
+            setStatus('error');
+          }
         }
       } catch (error) {
+        console.error('Unexpected error:', error);
         setError('An unexpected error occurred. Please try again.');
         setStatus('error');
       }
@@ -58,8 +94,36 @@ const EmailConfirmation = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        console.log('User signed in and verified via auth state change');
         setStatus('success');
+        
+        // Create user record in database
+        try {
+          const { error: dbError } = await supabase
+            .from('users')
+            .upsert([{
+              id: session.user.id,
+              email: session.user.email,
+              role: 'fan', // Default role, will be updated in KYC
+              is_kyc_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }], {
+              onConflict: 'id'
+            });
+
+          if (dbError) {
+            console.error('Database error:', dbError);
+          } else {
+            console.log('User record created/updated in database');
+          }
+        } catch (dbError) {
+          console.error('Database error during user creation:', dbError);
+        }
+        
         setTimeout(() => {
           navigate('/dashboard');
         }, 2000);
