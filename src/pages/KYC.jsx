@@ -153,11 +153,14 @@ const KYC = () => {
   const steps = getStepsForRole(userProfile?.role);
 
   useEffect(() => {
+    // Redirect to dashboard if KYC is already complete
     if (userProfile?.is_kyc_complete) {
-      navigate('/dashboard');
+      console.log('KYC already complete, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
       return;
     }
 
+    // Only fetch distributors for creators
     if (userProfile?.role === 'creator') {
       fetchDistributors();
     }
@@ -249,7 +252,8 @@ const KYC = () => {
       if (result.error) {
         setError(result.error.message);
       } else {
-        navigate('/dashboard');
+        console.log('KYC completed successfully, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -448,6 +452,27 @@ const KYC = () => {
 
   if (!userProfile) {
     return null;
+  }
+
+  // Show loading while redirecting if KYC is complete
+  if (userProfile?.is_kyc_complete) {
+    return (
+      <Box 
+        display="flex" 
+        flexDirection="column"
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="100vh"
+        sx={{ 
+          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: 'white', mb: 2 }} />
+        <Typography variant="h6" sx={{ color: 'white' }}>
+          Redirecting to dashboard...
+        </Typography>
+      </Box>
+    );
   }
 
   return (

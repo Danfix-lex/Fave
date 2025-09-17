@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { runBackendTests } from '../lib/backendTest.js';
+import WalletCreation from '../components/WalletCreation';
 
 const Dashboard = () => {
   const { userProfile } = useAuth();
@@ -480,6 +481,11 @@ const Dashboard = () => {
         </Box>
 
         {getRoleSpecificContent()}
+
+        {/* Wallet Creation Section */}
+        <motion.div variants={itemVariants} sx={{ mt: 4 }}>
+          <WalletCreation userProfile={userProfile} />
+        </motion.div>
       </motion.div>
     </Box>
   );
