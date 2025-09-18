@@ -8,7 +8,6 @@ import Layout from './components/Layout';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import MusicalBackground from './components/MusicalBackground';
-import BackendStatus from './components/BackendStatus';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -28,7 +27,6 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <MusicalBackground />
-      <BackendStatus />
       <AuthProvider>
         <Router>
           <Routes>
