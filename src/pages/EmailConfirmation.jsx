@@ -25,8 +25,10 @@ const EmailConfirmation = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
+  const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error', 'authenticated'
   const [error, setError] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [showRedirectMessage, setShowRedirectMessage] = useState(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -108,7 +110,8 @@ const EmailConfirmation = () => {
           
           if (verifyData?.user?.email_confirmed_at) {
             console.log('User verified successfully:', verifyData.user.email);
-            setStatus('success');
+            setUserEmail(verifyData.user.email);
+            setStatus('authenticated');
             
             // Update user record
             try {
@@ -134,7 +137,14 @@ const EmailConfirmation = () => {
               console.error('Database error during user update:', dbError);
             }
             
-            setTimeout(() => navigate('/dashboard'), 2000);
+            // Show success message for 3 seconds, then redirect to sign-in
+            setTimeout(() => {
+              setShowRedirectMessage(true);
+              setTimeout(() => {
+                navigate('/login');
+              }, 2000);
+            }, 3000);
+            
             return;
           } else {
             console.log('Verification succeeded but user not confirmed');
@@ -158,7 +168,8 @@ const EmailConfirmation = () => {
           
           if (hashData.session?.user?.email_confirmed_at) {
             console.log('User verified from hash:', hashData.session.user.email);
-            setStatus('success');
+            setUserEmail(hashData.session.user.email);
+            setStatus('authenticated');
             
             // Update user record
             try {
@@ -184,7 +195,14 @@ const EmailConfirmation = () => {
               console.error('Database error during user update:', dbError);
             }
             
-            setTimeout(() => navigate('/dashboard'), 2000);
+            // Show success message for 3 seconds, then redirect to sign-in
+            setTimeout(() => {
+              setShowRedirectMessage(true);
+              setTimeout(() => {
+                navigate('/login');
+              }, 2000);
+            }, 3000);
+            
             return;
           }
         }
@@ -201,7 +219,7 @@ const EmailConfirmation = () => {
           setStatus('error');
           return;
         }
-        
+
         // If we have a token but no session, try to process it as a direct verification
         if (token && !data.session) {
           console.log('Token found but no session, trying direct verification...');
@@ -217,7 +235,7 @@ const EmailConfirmation = () => {
             
             if (directVerify?.user?.email_confirmed_at) {
               console.log('Direct verification successful');
-              setStatus('success');
+          setStatus('success');
               setTimeout(() => navigate('/dashboard'), 2000);
               return;
             }
@@ -226,10 +244,11 @@ const EmailConfirmation = () => {
           }
         }
 
-        // If we have a session and user is verified, redirect to dashboard
+        // If we have a session and user is verified, show authenticated status
         if (data.session?.user?.email_confirmed_at) {
           console.log('User verified and signed in:', data.session.user.email);
-          setStatus('success');
+          setUserEmail(data.session.user.email);
+          setStatus('authenticated');
           
           // User record should already exist from signup, just update if needed
           try {
@@ -255,11 +274,14 @@ const EmailConfirmation = () => {
           } catch (dbError) {
             console.error('Database error during user update:', dbError);
           }
-
-          // Redirect to dashboard after a short delay
+          
+          // Show success message for 3 seconds, then redirect to sign-in
           setTimeout(() => {
-            navigate('/dashboard');
-          }, 2000);
+            setShowRedirectMessage(true);
+            setTimeout(() => {
+              navigate('/login');
+            }, 2000);
+          }, 3000);
         } else {
           // Check if we have URL hash with auth tokens but no session yet
           if (window.location.hash && window.location.hash.includes('access_token')) {
@@ -292,7 +314,7 @@ const EmailConfirmation = () => {
             setStatus('error');
           } else {
             setError('Email verification failed. Please check your email and click the verification link again, or try signing up again.');
-            setStatus('error');
+          setStatus('error');
           }
         }
       } catch (error) {
@@ -308,7 +330,8 @@ const EmailConfirmation = () => {
       
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
         console.log('User signed in and verified via auth state change');
-        setStatus('success');
+        setUserEmail(session.user.email);
+        setStatus('authenticated');
         
         // User record should already exist from signup, just update if needed
         try {
@@ -334,9 +357,13 @@ const EmailConfirmation = () => {
           console.error('Database error during user update:', dbError);
         }
         
+        // Show success message for 3 seconds, then redirect to sign-in
         setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
+          setShowRedirectMessage(true);
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        }, 3000);
       } else if (event === 'SIGNED_OUT') {
         setError('Session expired. Please sign in again.');
         setStatus('error');
@@ -375,6 +402,13 @@ const EmailConfirmation = () => {
           title: 'Verifying Your Email...',
           message: 'Please wait while we confirm your email address.',
           color: 'primary.main',
+        };
+      case 'authenticated':
+        return {
+          icon: <CheckCircle sx={{ fontSize: 60, color: 'success.main' }} />,
+          title: 'Email Verified Successfully!',
+          message: `Your email ${userEmail} has been confirmed and you are now authenticated.`,
+          color: 'success.main',
         };
       case 'success':
         return {
@@ -481,6 +515,40 @@ const EmailConfirmation = () => {
                     }}
                   >
                     Try Again
+                  </Button>
+                </Box>
+              )}
+
+              {status === 'authenticated' && !showRedirectMessage && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                    Preparing your account...
+                  </Typography>
+                </Box>
+              )}
+
+              {status === 'authenticated' && showRedirectMessage && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
+                    Redirecting you to the sign-in page...
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<ArrowForward />}
+                    onClick={() => navigate('/login')}
+                    sx={{
+                      py: 1.5,
+                      px: 4,
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #047857, #065f46)',
+                      },
+                    }}
+                  >
+                    Sign In Now
                   </Button>
                 </Box>
               )}
