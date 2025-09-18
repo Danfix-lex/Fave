@@ -110,13 +110,13 @@ const About = () => {
       name: 'Ojo Daniel',
       role: 'UI/UX Designer',
       image: '/Daniel.jpg',
-      description: 'Experienced the ',
+      description: 'Experienced UI/UX designer responsible for how the platform will look, good and professtional ',
     },
     {
       name: 'Emily Rodriguez',
       role: 'Smart Contract Developer',
       image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face',
-      description: 'UX designer and product strategist focused on creating intuitive user experiences.',
+      description: 'Our UI/UX Designer, creates intuitive, elegant digital experiences aligning user needs with business goals.',
     },
     {
       name: 'David Kim',
