@@ -70,6 +70,24 @@ const SongSubmission = () => {
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `${type}/${fileName}`;
       
+      // Check if bucket exists and create if needed
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const songFilesBucket = buckets?.find(bucket => bucket.id === 'song-files');
+      
+      if (!songFilesBucket) {
+        // Create bucket if it doesn't exist
+        const { error: bucketError } = await supabase.storage.createBucket('song-files', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/mp3'],
+          fileSizeLimit: 52428800 // 50MB
+        });
+        
+        if (bucketError) {
+          console.error('Bucket creation error:', bucketError);
+          throw new Error('Storage setup error. Please contact support.');
+        }
+      }
+      
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from('song-files')
@@ -78,7 +96,16 @@ const SongSubmission = () => {
           upsert: false
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        if (error.message.includes('already exists')) {
+          throw new Error('File with this name already exists. Please try again.');
+        } else if (error.message.includes('not found')) {
+          throw new Error('Storage bucket not found. Please contact support.');
+        } else {
+          throw new Error(`Upload failed: ${error.message}`);
+        }
+      }
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -88,6 +115,7 @@ const SongSubmission = () => {
       setUploadProgress(100);
       return publicUrl;
     } catch (err) {
+      console.error('File upload error:', err);
       throw err;
     }
   };

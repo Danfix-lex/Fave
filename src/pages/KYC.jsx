@@ -247,11 +247,43 @@ const KYC = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `profile-${user.id}-${Date.now()}.${fileExt}`;
       
+      // Check if bucket exists and create if needed
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const profilePhotosBucket = buckets?.find(bucket => bucket.id === 'profile-photos');
+      
+      if (!profilePhotosBucket) {
+        // Create bucket if it doesn't exist
+        const { error: bucketError } = await supabase.storage.createBucket('profile-photos', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+          fileSizeLimit: 5242880 // 5MB
+        });
+        
+        if (bucketError) {
+          console.error('Bucket creation error:', bucketError);
+          setError('Storage setup error. Please contact support.');
+          return;
+        }
+      }
+      
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        if (uploadError.message.includes('already exists')) {
+          setError('File with this name already exists. Please try again.');
+        } else if (uploadError.message.includes('not found')) {
+          setError('Storage bucket not found. Please contact support.');
+        } else {
+          setError(`Upload failed: ${uploadError.message}`);
+        }
+        return;
+      }
 
       const { data: urlData } = supabase.storage
         .from('profile-photos')
@@ -262,8 +294,10 @@ const KYC = () => {
         profile_photo_url: urlData.publicUrl
       }));
       setPhotoPreview(URL.createObjectURL(file));
+      setError(''); // Clear any previous errors
     } catch (error) {
-      setError('Failed to upload photo. Please try again.');
+      console.error('Photo upload error:', error);
+      setError(`Failed to upload photo: ${error.message}`);
     }
   };
 
@@ -287,11 +321,43 @@ const KYC = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `id-document-${user.id}-${Date.now()}.${fileExt}`;
       
+      // Check if bucket exists and create if needed
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const identityDocsBucket = buckets?.find(bucket => bucket.id === 'identity-documents');
+      
+      if (!identityDocsBucket) {
+        // Create bucket if it doesn't exist
+        const { error: bucketError } = await supabase.storage.createBucket('identity-documents', {
+          public: false,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (bucketError) {
+          console.error('Bucket creation error:', bucketError);
+          setError('Storage setup error. Please contact support.');
+          return;
+        }
+      }
+      
       const { error: uploadError } = await supabase.storage
         .from('identity-documents')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        if (uploadError.message.includes('already exists')) {
+          setError('File with this name already exists. Please try again.');
+        } else if (uploadError.message.includes('not found')) {
+          setError('Storage bucket not found. Please contact support.');
+        } else {
+          setError(`Upload failed: ${uploadError.message}`);
+        }
+        return;
+      }
 
       const { data: urlData } = supabase.storage
         .from('identity-documents')
@@ -301,8 +367,10 @@ const KYC = () => {
         ...prev,
         id_document_url: urlData.publicUrl
       }));
+      setError(''); // Clear any previous errors
     } catch (error) {
-      setError('Failed to upload document. Please try again.');
+      console.error('Document upload error:', error);
+      setError(`Failed to upload document: ${error.message}`);
     }
   };
 

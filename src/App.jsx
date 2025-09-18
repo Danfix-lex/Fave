@@ -21,6 +21,7 @@ import Contact from './pages/Contact';
 import Upcoming from './pages/Upcoming';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
+import PaymentSuccess from './pages/PaymentSuccess';
 import theme from './theme/theme';
 
 function App() {
@@ -104,7 +105,8 @@ function App() {
               }
             >
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="profile" element={<div>Profile Page (Coming Soon)</div>} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="payment-success" element={<PaymentSuccess />} />
               <Route path="unauthorized" element={<div>Unauthorized Access</div>} />
             </Route>
           </Routes>

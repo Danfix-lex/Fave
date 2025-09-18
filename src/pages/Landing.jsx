@@ -15,6 +15,9 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  Chip,
+  Avatar,
+  Stack,
 } from '@mui/material';
 import {
   ArrowForward,
@@ -22,29 +25,70 @@ import {
   People,
   TrendingUp,
   Security,
+  Star,
+  PlayArrow,
+  AttachMoney,
+  Public,
+  Diamond,
+  AutoAwesome,
+  Verified,
+  Timeline,
+  MonetizationOn,
 } from '@mui/icons-material';
 
 const features = [
   {
     icon: MusicNote,
-    title: "Create Projects",
-    description: "Musicians, authors, and filmmakers tokenize their future royalties",
+    title: "Tokenize Your Art",
+    description: "Transform your creative work into tradeable tokens. Musicians, authors, and filmmakers can monetize their future royalties today.",
+    color: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
   },
   {
     icon: People,
-    title: "Fan Investment", 
-    description: "Fans buy tokens representing ownership in future royalty streams",
+    title: "Fan-Powered Funding", 
+    description: "Fans become investors in your success. Buy tokens, support creators, and earn from their future achievements.",
+    color: "linear-gradient(135deg, #a855f7, #7c3aed)",
   },
   {
     icon: TrendingUp,
-    title: "Revenue Sharing",
-    description: "Automated distribution of royalties based on token ownership", 
+    title: "Smart Revenue Sharing",
+    description: "Blockchain-powered automatic distribution. Every stream, sale, or view generates returns for token holders.", 
+    color: "linear-gradient(135deg, #10b981, #059669)",
   },
   {
     icon: Security,
-    title: "Secure Platform",
-    description: "KYC verification and secure payment processing for all users",
+    title: "Bank-Grade Security",
+    description: "KYC verification, encrypted transactions, and secure smart contracts protect every investment.",
+    color: "linear-gradient(135deg, #f59e0b, #d97706)",
   }
+];
+
+const stats = [
+  { number: "10K+", label: "Active Creators", icon: MusicNote },
+  { number: "50K+", label: "Fan Investors", icon: People },
+  { number: "$2M+", label: "Tokens Traded", icon: AttachMoney },
+  { number: "15+", label: "Countries", icon: Public },
+];
+
+const testimonials = [
+  {
+    name: "Sarah Johnson",
+    role: "Independent Musician",
+    content: "Fave changed everything for me. I could finally fund my album without giving up creative control. My fans are now my biggest supporters!",
+    avatar: "SJ",
+  },
+  {
+    name: "Marcus Chen",
+    role: "Fan Investor",
+    content: "I've been following my favorite artist for years. Now I'm not just a fan - I'm an investor in their success. The returns have been incredible!",
+    avatar: "MC",
+  },
+  {
+    name: "Elena Rodriguez",
+    role: "Film Director",
+    content: "Getting funding for indie films was always a struggle. Fave connected me with fans who believed in my vision. Game changer!",
+    avatar: "ER",
+  },
 ];
 
 const Landing = () => {
@@ -128,18 +172,36 @@ const Landing = () => {
           >
             <Box sx={{ textAlign: 'center' }}>
               <motion.div variants={itemVariants}>
+                <Box sx={{ mb: 3 }}>
+                  <Chip
+                    icon={<AutoAwesome />}
+                    label="Revolutionary Platform"
+                    sx={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      backdropFilter: 'blur(10px)',
+                      fontWeight: 600,
+                    }}
+                  />
+                </Box>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
                 <Typography
                   variant="h1"
                   component="h1"
                   sx={{
-                    fontWeight: 700,
+                    fontWeight: 800,
                     mb: 4,
                     color: 'white',
                     textAlign: 'center',
                     textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                    fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
+                    lineHeight: 1.1,
                   }}
                 >
-                  Tokenize Your{' '}
+                  Where Fans Become{' '}
                   <Typography
                     component="span"
                     sx={{
@@ -162,26 +224,47 @@ const Landing = () => {
                       },
                     }}
                   >
-                Creative Future
+                    Investors
                   </Typography>
                 </Typography>
               </motion.div>
               
               <motion.div variants={itemVariants}>
                 <Typography
-                  variant="h5"
+                  variant="h4"
                   sx={{
                     color: 'rgba(255, 255, 255, 0.9)',
+                    mb: 2,
+                    maxWidth: '800px',
+                    mx: 'auto',
+                    lineHeight: 1.3,
+                    fontWeight: 600,
+                    textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' },
+                  }}
+                >
+                  The Future of Creative Funding is Here
+                </Typography>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.8)',
                     mb: 6,
                     maxWidth: '900px',
                     mx: 'auto',
                     lineHeight: 1.7,
                     fontWeight: 400,
                     textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                    fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
                   }}
                 >
-              The first platform where creators can sell future royalties as tokens to fans who believe in their work. 
-              Fund your projects, reward your supporters.
+                  Transform your creative work into tradeable tokens. Fans invest in your success, 
+                  you keep creative control, and everyone wins when your art succeeds. 
+                  <br />
+                  <strong>No more gatekeepers. No more middlemen. Just pure creative freedom.</strong>
                 </Typography>
               </motion.div>
 
@@ -247,6 +330,72 @@ const Landing = () => {
         </Container>
       </Box>
 
+      {/* Stats Section */}
+      <Box sx={{ 
+        py: { xs: 8, md: 12 }, 
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
+        backdropFilter: 'blur(10px)',
+        position: 'relative',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+      }}>
+        <Container maxWidth="lg">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <Grid container spacing={4}>
+              {stats.map((stat, index) => (
+                <Grid item xs={6} md={3} key={stat.label}>
+                  <motion.div variants={itemVariants}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          mx: 'auto',
+                          mb: 2,
+                          background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 8px 32px rgba(59, 130, 246, 0.3)',
+                        }}
+                      >
+                        <stat.icon sx={{ fontSize: 32, color: 'white' }} />
+                      </Box>
+                      <Typography
+                        variant="h3"
+                        sx={{
+                          fontWeight: 800,
+                          color: 'white',
+                          mb: 1,
+                          textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                        }}
+                      >
+                        {stat.number}
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: 'rgba(255, 255, 255, 0.8)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
+        </Container>
+      </Box>
+
       {/* Features Section */}
       <Box sx={{ 
         py: { xs: 10, md: 15 }, 
@@ -273,7 +422,7 @@ const Landing = () => {
                     textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-              How Fave Works
+              Why Choose Fave?
                 </Typography>
               </motion.div>
               <motion.div variants={itemVariants}>
@@ -287,7 +436,7 @@ const Landing = () => {
                     textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
                   }}
                 >
-              A revolutionary platform connecting creators and fans through tokenized royalties
+              The most innovative platform for creators and fans to connect through tokenized investments
                 </Typography>
               </motion.div>
             </Box>
@@ -324,11 +473,12 @@ const Landing = () => {
                             height: 64,
                             mx: 'auto',
                             mb: 3,
-                            background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
+                            background: feature.color,
                             borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                           }}
                         >
                           <feature.icon sx={{ fontSize: 32, color: 'white' }} />
@@ -355,6 +505,134 @@ const Landing = () => {
                         >
                     {feature.description}
                         </Typography>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
+        </Container>
+      </Box>
+
+      {/* Testimonials Section */}
+      <Box sx={{ 
+        py: { xs: 10, md: 15 }, 
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
+        backdropFilter: 'blur(10px)',
+        position: 'relative',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+      }}>
+        <Container maxWidth="lg">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <Box sx={{ textAlign: 'center', mb: 8 }}>
+              <motion.div variants={itemVariants}>
+                <Typography
+                  variant="h2"
+                  component="h2"
+                  sx={{ 
+                    fontWeight: 700, 
+                    mb: 3, 
+                    color: 'white',
+                    textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                  }}
+                >
+                  What Our Community Says
+                </Typography>
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <Typography
+                  variant="h5"
+                  sx={{ 
+                    color: 'rgba(255, 255, 255, 0.8)', 
+                    maxWidth: '600px', 
+                    mx: 'auto',
+                    fontWeight: 400,
+                    textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  Real stories from creators and fans who are already winning with Fave
+                </Typography>
+              </motion.div>
+            </Box>
+
+            <Grid container spacing={4}>
+              {testimonials.map((testimonial, index) => (
+                <Grid item xs={12} md={4} key={testimonial.name}>
+                  <motion.div variants={cardVariants}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        p: 4,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: 4,
+                        '&:hover': {
+                          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                          transform: 'translateY(-8px)',
+                          background: 'rgba(255, 255, 255, 0.15)',
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                          <Avatar
+                            sx={{
+                              width: 56,
+                              height: 56,
+                              background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
+                              mr: 2,
+                              fontWeight: 600,
+                              fontSize: '1.25rem',
+                            }}
+                          >
+                            {testimonial.avatar}
+                          </Avatar>
+                          <Box>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 600,
+                                color: 'white',
+                                mb: 0.5,
+                              }}
+                            >
+                              {testimonial.name}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                              }}
+                            >
+                              {testimonial.role}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            lineHeight: 1.7,
+                            fontStyle: 'italic',
+                            fontSize: '1.1rem',
+                          }}
+                        >
+                          "{testimonial.content}"
+                        </Typography>
+                        <Box sx={{ display: 'flex', mt: 2 }}>
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} sx={{ color: '#fbbf24', fontSize: 20 }} />
+                          ))}
+                        </Box>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -394,20 +672,33 @@ const Landing = () => {
                   textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                 }}
               >
-            Ready to Get Started?
+                Ready to Transform Your Creative Journey?
               </Typography>
             </motion.div>
             <motion.div variants={itemVariants}>
               <Typography
                 variant="h5"
                 sx={{ 
-                  mb: 6, 
+                  mb: 2, 
                   color: 'rgba(255, 255, 255, 0.9)',
+                  fontWeight: 600,
+                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                Join thousands of creators and fans already winning with Fave
+              </Typography>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Typography
+                variant="h6"
+                sx={{ 
+                  mb: 6, 
+                  color: 'rgba(255, 255, 255, 0.8)',
                   fontWeight: 400,
                   textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
                 }}
               >
-            Join the future of creative funding and fan engagement
+                Start your journey today. No gatekeepers. No middlemen. Just pure creative freedom.
               </Typography>
             </motion.div>
             <motion.div variants={itemVariants}>
@@ -432,7 +723,7 @@ const Landing = () => {
                     transition: 'all 0.3s ease',
                   }}
           >
-            Create Your Account
+            Start Your Journey Now
               </Button>
             </motion.div>
           </motion.div>

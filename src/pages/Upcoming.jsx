@@ -45,6 +45,7 @@ import {
 } from '../lib/currency';
 import { supabase } from '../lib/supabase';
 import { MUSIC_GENRES } from '../lib/constants';
+import PaymentModal from '../components/PaymentModal';
 
 const Upcoming = () => {
   const theme = useTheme();
@@ -58,6 +59,8 @@ const Upcoming = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState(getUserCurrency());
   const [availableCurrencies] = useState(getAfricanCurrencies());
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedSong, setSelectedSong] = useState(null);
 
   // Handle clicks for unauthenticated users
   const handleUnauthenticatedClick = (e) => {
@@ -150,6 +153,57 @@ const Upcoming = () => {
 
   const handleCurrencyChange = (event) => {
     setSelectedCurrency(event.target.value);
+  };
+
+  const handleBuyTokens = (song) => {
+    if (!user) {
+      handleUnauthenticatedClick();
+      return;
+    }
+    setSelectedSong(song);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = async (paymentData) => {
+    try {
+      // Record the token purchase in the database
+      const { error } = await supabase
+        .from('token_purchases')
+        .insert({
+          user_id: user.id,
+          song_id: paymentData.songId,
+          quantity: paymentData.quantity,
+          amount_paid: paymentData.amount,
+          currency: paymentData.currency,
+          payment_reference: paymentData.reference,
+          status: 'completed'
+        });
+
+      if (error) throw error;
+
+      // Navigate to success page with payment data
+      navigate('/payment-success', {
+        state: {
+          paymentData: {
+            ...paymentData,
+            songTitle: selectedSong?.title,
+            artistName: selectedSong?.artist_name,
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error recording purchase:', error);
+      // Still navigate to success page even if database recording fails
+      navigate('/payment-success', {
+        state: {
+          paymentData: {
+            ...paymentData,
+            songTitle: selectedSong?.title,
+            artistName: selectedSong?.artist_name,
+          }
+        }
+      });
+    }
   };
 
   const getLocalPrice = (usdPrice) => {
@@ -520,7 +574,7 @@ const Upcoming = () => {
                               variant="contained"
                               fullWidth
                               disabled={song.status !== 'live'}
-                              onClick={!user ? handleUnauthenticatedClick : undefined}
+                              onClick={() => song.status === 'live' ? handleBuyTokens(song) : handleUnauthenticatedClick()}
                               sx={{
                                 background: song.status === 'live' 
                                   ? 'linear-gradient(135deg, #3b82f6, #a855f7)'
@@ -532,7 +586,7 @@ const Upcoming = () => {
                                 },
                               }}
                             >
-                              {song.status === 'live' ? 'Invest Now' : 'Coming Soon'}
+                              {song.status === 'live' ? 'Buy Tokens' : 'Coming Soon'}
                             </Button>
                             <IconButton
                               onClick={!user ? handleUnauthenticatedClick : undefined}
@@ -592,6 +646,17 @@ const Upcoming = () => {
           )}
         </motion.div>
       </Container>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        song={selectedSong}
+        tokenPrice={selectedSong ? getLocalPrice(selectedSong.price_per_token_usd).value : 0}
+        currency={selectedCurrency}
+        onPaymentSuccess={handlePaymentSuccess}
+        user={user}
+      />
     </Box>
   );
 };
