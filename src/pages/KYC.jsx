@@ -260,8 +260,8 @@ const KYC = () => {
         console.error('Upload error:', uploadError);
         if (uploadError.message.includes('already exists')) {
           setError('File with this name already exists. Please try again.');
-        } else if (uploadError.message.includes('not found')) {
-          setError('Storage bucket not found. Please contact support.');
+        } else if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) {
+          setError('Storage not configured yet. Please contact support to set up file uploads.');
         } else {
           setError(`Upload failed: ${uploadError.message}`);
         }
@@ -317,8 +317,8 @@ const KYC = () => {
         console.error('Upload error:', uploadError);
         if (uploadError.message.includes('already exists')) {
           setError('File with this name already exists. Please try again.');
-        } else if (uploadError.message.includes('not found')) {
-          setError('Storage bucket not found. Please contact support.');
+        } else if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) {
+          setError('Storage not configured yet. Please contact support to set up file uploads.');
         } else {
           setError(`Upload failed: ${uploadError.message}`);
         }
