@@ -82,7 +82,7 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            Fave
+            <img src="/favicon.jpg" alt="logo" style={{ height: 28, width: 'auto', display: 'block' }} loading="lazy" />
           </Typography>
           <IconButton onClick={handleDrawerToggle}>
             <CloseIcon />
@@ -157,12 +157,16 @@ const Header = () => {
   return (
     <>
       <AppBar 
-        position="sticky" 
+        position="fixed" 
         elevation={0}
         sx={{
           background: 'rgba(15, 23, 42, 0.9)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
         }}
       >
         <Toolbar>
@@ -182,7 +186,7 @@ const Header = () => {
             variant="h5"
             sx={{
               flexGrow: 1,
-              fontWeight: 700,
+              fontWeight: 100,
               background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
@@ -190,7 +194,7 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            Fave
+            <img src="/favicon.jpg" alt="logo" style={{ height: 32, width: 'auto', display: 'block' }} loading="lazy" />
           </Typography>
 
           {/* Desktop Navigation */}
