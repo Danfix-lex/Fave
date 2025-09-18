@@ -104,7 +104,7 @@ const About = () => {
       name: 'Stephen Omotoso',
       role: 'Frontend Developer',
       image: '/work picture.jpg',
-      description: 'Former music industry executive with 15+ years of experience in artist development.',
+      description: 'Our Frontend developer is responsible for bringing out the work of the designer to live',
     },
     {
       name: 'Ojo Daniel',
