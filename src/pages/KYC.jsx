@@ -59,7 +59,26 @@ const KYC = () => {
     stage_name: '',
     distributor_id: '',
     id_number: '',
-    profile_photo_url: ''
+    id_type: '',
+    id_document_url: '',
+    profile_photo_url: '',
+    bio: '',
+    social_media: {
+      instagram: '',
+      twitter: '',
+      youtube: '',
+      spotify: ''
+    },
+    date_of_birth: '',
+    nationality: '',
+    phone_number: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      country: '',
+      postal_code: ''
+    }
   });
   const [distributors, setDistributors] = useState([]);
   const [error, setError] = useState('');
@@ -116,13 +135,19 @@ const KYC = () => {
         title: 'Personal Information',
         description: 'Tell us about yourself',
         icon: Person,
-        fields: ['full_name']
+        fields: ['full_name', 'date_of_birth', 'nationality', 'phone_number']
+      },
+      {
+        title: 'Address Information',
+        description: 'Your contact address',
+        icon: AccountBalance,
+        fields: ['address.street', 'address.city', 'address.state', 'address.country', 'address.postal_code']
       },
       {
         title: 'Identity Verification',
-        description: 'Verify your identity',
+        description: 'Verify your identity with documents',
         icon: Fingerprint,
-        fields: ['id_number']
+        fields: ['id_type', 'id_number', 'id_document_url']
       },
       {
         title: 'Profile Photo',
@@ -133,11 +158,11 @@ const KYC = () => {
     ];
 
     if (role === 'creator') {
-      baseSteps.splice(1, 0, {
+      baseSteps.splice(2, 0, {
         title: 'Artist Profile',
         description: 'Set up your artist identity',
         icon: MusicNote,
-        fields: ['stage_name']
+        fields: ['stage_name', 'bio', 'social_media.instagram', 'social_media.twitter', 'social_media.youtube', 'social_media.spotify']
       });
       baseSteps.push({
         title: 'Distribution Partner',
@@ -182,10 +207,23 @@ const KYC = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     setError('');
   };
 
@@ -207,7 +245,7 @@ const KYC = () => {
       const { supabase } = await import('../lib/supabase');
       
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `profile-${user.id}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')
@@ -219,13 +257,52 @@ const KYC = () => {
         .from('profile-photos')
         .getPublicUrl(fileName);
 
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         profile_photo_url: urlData.publicUrl
-      });
+      }));
       setPhotoPreview(URL.createObjectURL(file));
     } catch (error) {
       setError('Failed to upload photo. Please try again.');
+    }
+  };
+
+  const handleDocumentUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/') && !file.type.includes('pdf')) {
+      setError('Please select a valid image or PDF file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Document size must be less than 10MB');
+      return;
+    }
+
+    try {
+      const { supabase } = await import('../lib/supabase');
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `id-document-${user.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('identity-documents')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('identity-documents')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({
+        ...prev,
+        id_document_url: urlData.publicUrl
+      }));
+    } catch (error) {
+      setError('Failed to upload document. Please try again.');
     }
   };
 
@@ -238,12 +315,31 @@ const KYC = () => {
       const profileData = {
         full_name: formData.full_name.trim(),
         id_number: formData.id_number.trim(),
+        id_type: formData.id_type,
+        id_document_url: formData.id_document_url || null,
         profile_photo_url: formData.profile_photo_url || null,
+        date_of_birth: formData.date_of_birth,
+        nationality: formData.nationality.trim(),
+        phone_number: formData.phone_number.trim(),
+        address: {
+          street: formData.address.street.trim(),
+          city: formData.address.city.trim(),
+          state: formData.address.state.trim(),
+          country: formData.address.country.trim(),
+          postal_code: formData.address.postal_code.trim()
+        }
       };
 
       if (userProfile?.role === 'creator') {
         profileData.stage_name = formData.stage_name.trim() || null;
         profileData.distributor_id = formData.distributor_id;
+        profileData.bio = formData.bio.trim() || null;
+        profileData.social_media = {
+          instagram: formData.social_media.instagram.trim() || null,
+          twitter: formData.social_media.twitter.trim() || null,
+          youtube: formData.social_media.youtube.trim() || null,
+          spotify: formData.social_media.spotify.trim() || null
+        };
       }
 
       const result = await updateProfile(profileData);
@@ -274,7 +370,15 @@ const KYC = () => {
       if (field === 'distributor_id' && userProfile?.role !== 'creator') return true;
       // Skip stage_name validation for non-creators
       if (field === 'stage_name' && userProfile?.role !== 'creator') return true;
-      return formData[field] && formData[field].trim() !== '';
+      
+      // Handle nested field validation
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        const value = formData[parent]?.[child];
+        return value && value.toString().trim() !== '';
+      }
+      
+      return formData[field] && formData[field].toString().trim() !== '';
     });
   };
 
@@ -285,7 +389,7 @@ const KYC = () => {
     if (stepTitle.includes('personal information')) {
       return (
         <Grid container spacing={4}>
-          <Grid item xs={12}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Full Name"
@@ -301,7 +405,131 @@ const KYC = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 3 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Date of Birth"
+              name="date_of_birth"
+              type="date"
+              value={formData.date_of_birth}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Badge color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Nationality"
+              name="nationality"
+              value={formData.nationality}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Security color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Phone Number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Person color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+        </Grid>
+      );
+    }
+
+    if (stepTitle.includes('address information')) {
+      return (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Street Address"
+              name="address.street"
+              value={formData.address.street}
+              onChange={handleChange}
+              required
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountBalance color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="City"
+              name="address.city"
+              value={formData.address.city}
+              onChange={handleChange}
+              required
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="State/Province"
+              name="address.state"
+              value={formData.address.state}
+              onChange={handleChange}
+              required
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Country"
+              name="address.country"
+              value={formData.address.country}
+              onChange={handleChange}
+              required
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Postal Code"
+              name="address.postal_code"
+              value={formData.address.postal_code}
+              onChange={handleChange}
+              required
+              variant="outlined"
             />
           </Grid>
         </Grid>
@@ -330,6 +558,75 @@ const KYC = () => {
               helperText="Your artist name or stage name"
             />
           </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Bio"
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              multiline
+              rows={4}
+              variant="outlined"
+              helperText="Tell us about yourself as an artist"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Instagram Handle"
+              name="social_media.instagram"
+              value={formData.social_media.instagram}
+              onChange={handleChange}
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Typography>@</Typography>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Twitter Handle"
+              name="social_media.twitter"
+              value={formData.social_media.twitter}
+              onChange={handleChange}
+              variant="outlined"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Typography>@</Typography>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="YouTube Channel"
+              name="social_media.youtube"
+              value={formData.social_media.youtube}
+              onChange={handleChange}
+              variant="outlined"
+              helperText="Your YouTube channel URL or handle"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Spotify Profile"
+              name="social_media.spotify"
+              value={formData.social_media.spotify}
+              onChange={handleChange}
+              variant="outlined"
+              helperText="Your Spotify artist profile URL"
+            />
+          </Grid>
         </Grid>
       );
     }
@@ -337,10 +634,28 @@ const KYC = () => {
     if (stepTitle.includes('identity verification')) {
       return (
         <Grid container spacing={4}>
-          <Grid item xs={12}>
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel>ID Type</InputLabel>
+              <Select
+                name="id_type"
+                value={formData.id_type}
+                onChange={handleChange}
+                label="ID Type"
+                required
+              >
+                <MenuItem value="passport">Passport</MenuItem>
+                <MenuItem value="drivers_license">Driver's License</MenuItem>
+                <MenuItem value="national_id">National ID</MenuItem>
+                <MenuItem value="voters_card">Voter's Card</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Government ID Number"
+              label="ID Number"
               name="id_number"
               value={formData.id_number}
               onChange={handleChange}
@@ -353,8 +668,43 @@ const KYC = () => {
                   </InputAdornment>
                 ),
               }}
-              helperText="Enter your passport, driver's license, or national ID number"
+              helperText="Enter your ID number exactly as it appears"
             />
+          </Grid>
+          <Grid item xs={12}>
+            <Box textAlign="center">
+              <input
+                accept="image/*,application/pdf"
+                style={{ display: 'none' }}
+                id="document-upload"
+                type="file"
+                onChange={handleDocumentUpload}
+              />
+              <label htmlFor="document-upload">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<CloudUpload />}
+                  size="large"
+                  sx={{ mb: 2 }}
+                >
+                  Upload ID Document
+                </Button>
+              </label>
+              {formData.id_document_url && (
+                <Box mt={2}>
+                  <Chip
+                    label="Document uploaded successfully"
+                    color="success"
+                    icon={<CheckCircle />}
+                    sx={{ mb: 1 }}
+                  />
+                </Box>
+              )}
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Upload a clear photo or scan of your ID document. Accepted formats: JPG, PNG, PDF (Max 10MB)
+              </Typography>
+            </Box>
           </Grid>
         </Grid>
       );
@@ -385,15 +735,22 @@ const KYC = () => {
             <Box mt={2}>
               <Avatar
                 src={photoPreview}
-                sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+                sx={{ width: 150, height: 150, mx: 'auto', mb: 2, border: '3px solid #2196f3' }}
               />
-              <Typography variant="body2" color="text.secondary">
-                Photo uploaded successfully
-              </Typography>
+              <Chip
+                label="Photo uploaded successfully"
+                color="success"
+                icon={<CheckCircle />}
+                sx={{ mb: 2 }}
+              />
             </Box>
           )}
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Upload a clear photo of yourself. This will be your profile picture.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, maxWidth: 400, mx: 'auto' }}>
+            Upload a clear, professional photo of yourself. This will be your profile picture and should be:
+            <br />• High quality and well-lit
+            <br />• Your face clearly visible
+            <br />• Professional or casual (no inappropriate content)
+            <br />• JPG, PNG format (Max 5MB)
           </Typography>
         </Box>
       );

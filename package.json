@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.6",
     "@mui/material": "^5.15.6",
+    "@mui/x-charts": "^8.11.3",
     "@mysten/sui": "^1.38.0",
     "@relume_io/relume-ui": "latest",
     "@supabase/supabase-js": "^2.38.0",
@@ -20,7 +21,8 @@
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.15.0"
+    "react-router-dom": "^6.15.0",
+    "recharts": "^3.2.1"
   },
   "devDependencies": {
     "@relume_io/relume-tailwind": "latest",

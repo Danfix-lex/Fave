@@ -20,6 +20,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Upcoming from './pages/Upcoming';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
 import theme from './theme/theme';
 
 function App() {
@@ -79,6 +80,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Profile route */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               }
             />
