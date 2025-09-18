@@ -40,6 +40,7 @@ const Header = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -55,7 +56,13 @@ const Header = () => {
     setAnchorEl(null);
   };
 
-  const navigationItems = [
+  const navigationItems = user ? [
+    // Authenticated users - no home button, dashboard-focused navigation
+    { name: 'Dashboard', href: '/dashboard', icon: TrendingUp },
+    { name: 'Upcoming Songs', href: '/upcoming', icon: MusicNote },
+    { name: 'Profile', href: '/profile', icon: Person },
+  ] : [
+    // Unauthenticated users - full navigation including home
     { name: 'Home', href: '/', icon: Home },
     { name: 'About Us', href: '/about', icon: Info },
     { name: 'Upcoming Songs', href: '/upcoming', icon: TrendingUp },
@@ -156,7 +163,6 @@ const Header = () => {
     </Box>
   );
 
-  const { user, signOut } = useAuth();
   const userAvatarUrl = user?.user_metadata?.avatar_url
     || user?.user_metadata?.picture
     || user?.identities?.[0]?.identity_data?.picture

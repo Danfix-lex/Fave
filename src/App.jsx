@@ -22,6 +22,7 @@ import Upcoming from './pages/Upcoming';
 import AdminDashboard from './pages/AdminDashboard';
 import Profile from './pages/Profile';
 import PaymentSuccess from './pages/PaymentSuccess';
+import AuthenticatedRedirect from './components/AuthenticatedRedirect';
 import theme from './theme/theme';
 
 function App() {
@@ -34,25 +35,25 @@ function App() {
           <Routes>
             {/* Public routes with header and footer */}
             <Route path="/" element={
-              <>
+              <AuthenticatedRedirect>
                 <Header />
                 <Landing />
                 <Footer />
-              </>
+              </AuthenticatedRedirect>
             } />
             <Route path="/about" element={
-              <>
+              <AuthenticatedRedirect>
                 <Header />
                 <About />
                 <Footer />
-              </>
+              </AuthenticatedRedirect>
             } />
             <Route path="/contact" element={
-              <>
+              <AuthenticatedRedirect>
                 <Header />
                 <Contact />
                 <Footer />
-              </>
+              </AuthenticatedRedirect>
             } />
             <Route path="/upcoming" element={
               <>
