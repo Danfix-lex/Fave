@@ -115,7 +115,7 @@ const About = () => {
     {
       name: 'Emily Rodriguez',
       role: 'Smart Contract Developer',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face',
+      image: '/Uzo.jpg',
       description: 'Our UI/UX Designer, creates intuitive, elegant digital experiences aligning user needs with business goals.',
     },
     {

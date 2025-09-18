@@ -156,8 +156,6 @@ const Signup = () => {
       if (error) {
         setError(error.message || 'An error occurred during Google sign-in');
       }
-      // Note: The redirect to Google's OAuth page will happen automatically
-      // The user will be redirected back to the callback URL after authentication
     } catch (error) {
       console.error('Google signup error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
