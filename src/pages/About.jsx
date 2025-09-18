@@ -101,26 +101,26 @@ const About = () => {
 
   const team = [
     {
-      name: 'Sarah Johnson',
-      role: 'CEO & Founder',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+      name: 'Stephen Omotoso',
+      role: 'Frontend Developer',
+      image: '/work picture.jpg',
       description: 'Former music industry executive with 15+ years of experience in artist development.',
     },
     {
-      name: 'Michael Chen',
-      role: 'CTO',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
-      description: 'Blockchain expert and full-stack developer passionate about decentralized technologies.',
+      name: 'Ojo Daniel',
+      role: 'UI/UX Designer',
+      image: '/Daniel.jpg',
+      description: 'Experienced the ',
     },
     {
       name: 'Emily Rodriguez',
-      role: 'Head of Product',
+      role: 'Smart Contract Developer',
       image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face',
       description: 'UX designer and product strategist focused on creating intuitive user experiences.',
     },
     {
       name: 'David Kim',
-      role: 'Head of Marketing',
+      role: 'Backend Developer',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
       description: 'Marketing veteran with expertise in growth hacking and community building.',
     },
