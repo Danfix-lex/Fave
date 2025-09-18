@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Environment variables with fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-const hasValidConfig = Boolean(supabaseUrl && supabaseAnonKey);
+const hasValidConfig = Boolean(
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl !== 'https://placeholder.supabase.co' &&
+  supabaseAnonKey !== 'placeholder-key'
+);
 
 if (!hasValidConfig) {
-  // Option A: throw to fail fast
-  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
-  // Option B: return a noop client or skip export (choose one approach)
+  console.warn('⚠️ Supabase credentials not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment variables.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
