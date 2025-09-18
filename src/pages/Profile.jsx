@@ -189,24 +189,7 @@ const Profile = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `profile-${user.id}-${Date.now()}.${fileExt}`;
       
-      // Check if bucket exists and create if needed
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const profilePhotosBucket = buckets?.find(bucket => bucket.id === 'profile-photos');
-      
-      if (!profilePhotosBucket) {
-        // Create bucket if it doesn't exist
-        const { error: bucketError } = await supabase.storage.createBucket('profile-photos', {
-          public: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-          fileSizeLimit: 5242880 // 5MB
-        });
-        
-        if (bucketError) {
-          console.error('Bucket creation error:', bucketError);
-          setError('Storage setup error. Please contact support.');
-          return;
-        }
-      }
+      // Try to upload directly - if bucket doesn't exist, it will be created automatically
       
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')

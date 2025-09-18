@@ -100,7 +100,7 @@ function App() {
             <Route
               path="/*"
               element={
-                <ProtectedRoute requireKYC={true}>
+                <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
               }

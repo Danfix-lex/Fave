@@ -70,23 +70,7 @@ const SongSubmission = () => {
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `${type}/${fileName}`;
       
-      // Check if bucket exists and create if needed
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const songFilesBucket = buckets?.find(bucket => bucket.id === 'song-files');
-      
-      if (!songFilesBucket) {
-        // Create bucket if it doesn't exist
-        const { error: bucketError } = await supabase.storage.createBucket('song-files', {
-          public: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/mp3'],
-          fileSizeLimit: 52428800 // 50MB
-        });
-        
-        if (bucketError) {
-          console.error('Bucket creation error:', bucketError);
-          throw new Error('Storage setup error. Please contact support.');
-        }
-      }
+      // Try to upload directly - if bucket doesn't exist, it will be created automatically
       
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
