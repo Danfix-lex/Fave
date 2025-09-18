@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, signInWithGoogle as signInWithGoogleHelper } from '../lib/supabase';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { userService, profileService } from '../lib/database';
 
-const AuthContext = createContext({});
+const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Fallback timeout to ensure loading is never stuck
     const fallbackTimeout = setTimeout(() => {
-      console.log('Fallback timeout - forcing loading to false');
       setLoading(false);
     }, 2000);
 
@@ -30,59 +29,50 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
-          // Set basic profile immediately
           setUserProfile({
             id: session.user.id,
             email: session.user.email,
             role: 'fan',
-            is_kyc_complete: false,
-            profile: null
+            is_kyc_complete: false
           });
-          console.log('Initial session - basic profile set');
         }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        clearTimeout(fallbackTimeout);
         setLoading(false);
-        console.log('Initial loading set to false');
+      } catch (error) {
+        setLoading(false);
       }
     };
 
     getSession();
 
-    // Listen for auth changes
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email);
-      
-      if (session?.user) {
+      if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
-        // Set a basic user profile immediately without database calls
         setUserProfile({
           id: session.user.id,
           email: session.user.email,
           role: 'fan',
-          is_kyc_complete: false,
-          profile: null
+          is_kyc_complete: false
         });
-        console.log('Basic user profile set immediately');
-      } else {
+        
+        // Fetch full profile in background
+        fetchFullProfile(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserProfile(null);
       }
       
-      // Always set loading to false
       setLoading(false);
-      console.log('Loading set to false');
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   const fetchUserProfile = async (userId) => {
     try {
-      console.log('Fetching user profile for user:', userId);
-      
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
@@ -91,46 +81,48 @@ export const AuthProvider = ({ children }) => {
       const profilePromise = userService.getUserById(userId);
       const userResult = await Promise.race([profilePromise, timeoutPromise]);
       
-      console.log('userResult:', userResult);
-      
       if (userResult.success && userResult.data) {
         // User exists in public.users
-        console.log('User found in public.users');
         setUserProfile({
           ...userResult.data,
           profile: null // Profile will be fetched separately when needed
         });
-        console.log('User profile set successfully');
       } else {
         // User doesn't exist in public.users, create a basic user profile
-        console.log('User not found in public.users, creating basic profile');
         setUserProfile({
           id: userId,
           email: user?.email || '',
           role: 'fan',
-          is_kyc_complete: false,
-          profile: null
+          is_kyc_complete: false
         });
-        console.log('Basic user profile set successfully');
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Set a basic user profile even if there's an error
+      // Set a basic profile to prevent infinite loading
       setUserProfile({
         id: userId,
         email: user?.email || '',
         role: 'fan',
-        is_kyc_complete: false,
-        profile: null
+        is_kyc_complete: false
       });
-      console.log('Fallback user profile set after error');
+    }
+  };
+
+  const fetchFullProfile = async (userId) => {
+    try {
+      const profileResult = await profileService.getProfile(userId);
+      if (profileResult.success && profileResult.data) {
+        setUserProfile(prev => ({
+          ...prev,
+          profile: profileResult.data
+        }));
+      }
+    } catch (error) {
+      return null;
     }
   };
 
   const signUp = async (email, password, role) => {
     try {
-      console.log('Starting signup process for:', email, 'role:', role);
-      
       // First, create user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -140,11 +132,7 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
-      console.log('Supabase signup response:', { data, error });
-
       if (error) {
-        console.error('Supabase signup error:', error);
-        
         // Handle specific error cases
         if (error.message.includes('User already registered')) {
           throw new Error('An account with this email already exists. Please sign in instead.');
@@ -158,8 +146,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (data.user) {
-        console.log('User created, creating user record...');
-        
         // Create user record in database immediately
         try {
           const { error: dbError } = await supabase
@@ -174,22 +160,15 @@ export const AuthProvider = ({ children }) => {
             }]);
 
           if (dbError) {
-            console.error('Database error during user creation:', dbError);
-            // Don't fail the signup for database errors, but log them
-          } else {
-            console.log('User record created in database');
+            // Don't fail the signup for database errors
           }
         } catch (dbError) {
-          console.error('Database error during user creation:', dbError);
+          // Don't fail the signup for database errors
         }
-        
-        console.log('User created, verification email sent');
       }
 
-      console.log('Signup completed successfully');
       return { data, error: null };
     } catch (error) {
-      console.error('Signup error:', error);
       return { data: null, error };
     }
   };
@@ -201,81 +180,72 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       return { data, error: null };
     } catch (error) {
       return { data: null, error };
     }
   };
 
-  const signInWithGoogle = async (role) => {
-    return await signInWithGoogleHelper(role);
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
   };
 
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        // Handle signout error silently
+      }
       setUser(null);
       setUserProfile(null);
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Handle signout error silently
     }
   };
 
   const updateProfile = async (profileData) => {
     try {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      // Use profile service to upsert profile
-      const profileResult = await profileService.upsertProfile({
-        user_id: user.id,
-        ...profileData,
-      });
-
-      if (!profileResult.success) {
-        throw new Error(profileResult.error.message);
-      }
-
-      // Update KYC completion status
-      const kycResult = await userService.updateKYCStatus(user.id, true);
-      if (!kycResult.success) {
-        console.error('Error updating KYC status:', kycResult.error);
-      }
-
-      // Refresh user profile
-      await fetchUserProfile(user.id);
-      return { error: null };
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      return { error };
-    }
-  };
-
-  const refreshProfile = async () => {
-    if (user?.id) {
-      await fetchUserProfile(user.id);
-    }
-  };
-
-  const fetchFullProfile = async () => {
-    if (!user?.id) return null;
-    
-    try {
-      const profileResult = await profileService.getProfile(user.id);
-      if (profileResult.success) {
-        setUserProfile(prev => ({
-          ...prev,
-          profile: profileResult.data
-        }));
-        return profileResult.data;
+      if (user?.id) {
+        const result = await profileService.updateProfile(user.id, profileData);
+        if (result.success) {
+          setUserProfile(prev => ({
+            ...prev,
+            profile: result.data
+          }));
+        }
+        
+        // Update KYC status if provided
+        if (profileData.is_kyc_complete !== undefined) {
+          const kycResult = await userService.updateUser(user.id, {
+            is_kyc_complete: profileData.is_kyc_complete
+          });
+          if (kycResult.error) {
+            // Handle KYC update error silently
+          }
+        }
       }
     } catch (error) {
-      console.error('Error fetching full profile:', error);
+      // Handle profile update error silently
     }
-    return null;
   };
 
   const value = {
@@ -287,14 +257,12 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     signOut,
     updateProfile,
-    refreshProfile,
     fetchFullProfile,
   };
 
-  // Debug logging
-  console.log('AuthContext value:', value);
-  console.log('signUp in context:', signUp);
-  console.log('typeof signUp in context:', typeof signUp);
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

@@ -20,6 +20,7 @@ import KYC from './pages/KYC';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Upcoming from './pages/Upcoming';
+import AdminDashboard from './pages/AdminDashboard';
 import theme from './theme/theme';
 
 function App() {
@@ -71,6 +72,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <KYC />
+                </ProtectedRoute>
+              }
+            />
+            {/* Admin Dashboard route */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

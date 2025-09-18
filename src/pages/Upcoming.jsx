@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Container,
   Typography,
@@ -17,6 +19,11 @@ import {
   Tab,
   InputBase,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search,
@@ -28,14 +35,34 @@ import {
   Person,
   MusicNote,
   FilterList,
+  Language,
 } from '@mui/icons-material';
+import { 
+  getUserCurrency, 
+  calculateTokenPrice, 
+  getAfricanCurrencies,
+  formatCurrency 
+} from '../lib/currency';
+import { supabase } from '../lib/supabase';
 
 const Upcoming = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [playingTrack, setPlayingTrack] = useState(null);
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCurrency, setSelectedCurrency] = useState(getUserCurrency());
+  const [availableCurrencies] = useState(getAfricanCurrencies());
+
+  // Handle clicks for unauthenticated users
+  const handleUnauthenticatedClick = (e) => {
+    e.preventDefault();
+    navigate('/signup');
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -167,26 +194,76 @@ const Upcoming = () => {
 
   const genres = ['All', 'Electronic', 'Hip-Hop', 'Indie', 'Pop', 'Rock', 'Jazz'];
 
+  useEffect(() => {
+    // Redirect unauthenticated users to signup
+    if (!user) {
+      navigate('/signup');
+      return;
+    }
+    fetchSongs();
+  }, [user, navigate]);
+
+  const fetchSongs = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('songs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSongs(data || []);
+    } catch (error) {
+      // Handle error silently
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
 
   const handlePlayPause = (trackId) => {
+    if (!user) {
+      navigate('/signup');
+      return;
+    }
     setPlayingTrack(playingTrack === trackId ? null : trackId);
   };
 
-  const filteredSongs = upcomingSongs.filter(song => {
+  const handleCurrencyChange = (event) => {
+    setSelectedCurrency(event.target.value);
+  };
+
+  const getLocalPrice = (usdPrice) => {
+    return calculateTokenPrice(usdPrice, selectedCurrency);
+  };
+
+  const filteredSongs = songs.filter(song => {
     const matchesSearch = song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         song.artist.toLowerCase().includes(searchQuery.toLowerCase());
+                         song.artist_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGenre = selectedTab === 0 || song.genre === genres[selectedTab];
     return matchesSearch && matchesGenre;
   });
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Live': return 'success';
-      case 'Coming Soon': return 'warning';
+      case 'live': return 'success';
+      case 'coming_soon': return 'warning';
+      case 'sold_out': return 'error';
+      case 'ended': return 'default';
       default: return 'default';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'live': return 'Live';
+      case 'coming_soon': return 'Coming Soon';
+      case 'sold_out': return 'Sold Out';
+      case 'ended': return 'Ended';
+      default: return status;
     }
   };
 
@@ -258,7 +335,7 @@ const Upcoming = () => {
               >
                 <CardContent sx={{ p: 0 }}>
                   <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} md={8}>
+                    <Grid item xs={12} md={6}>
                       <Box
                         sx={{
                           display: 'flex',
@@ -284,7 +361,36 @@ const Upcoming = () => {
                         />
                       </Box>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={3}>
+                      <FormControl fullWidth>
+                        <InputLabel sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>Currency</InputLabel>
+                        <Select
+                          value={selectedCurrency}
+                          onChange={handleCurrencyChange}
+                          startAdornment={<Language sx={{ color: 'rgba(255, 255, 255, 0.7)', mr: 1 }} />}
+                          sx={{
+                            color: 'white',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'rgba(255, 255, 255, 0.3)',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: 'primary.main',
+                            },
+                          }}
+                        >
+                          <MenuItem value="USD">USD - US Dollar</MenuItem>
+                          {availableCurrencies.map((currency) => (
+                            <MenuItem key={currency.code} value={currency.code}>
+                              {currency.code} - {currency.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={3}>
                       <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
                         <Button
                           startIcon={<FilterList />}
@@ -338,176 +444,210 @@ const Upcoming = () => {
 
           {/* Songs Grid */}
           <Grid container spacing={4}>
-            {filteredSongs.map((song, index) => (
-              <Grid item xs={12} sm={6} md={4} key={song.id}>
-                <motion.div
-                  variants={cardVariants}
-                  whileHover="hover"
-                >
-                  <Card
-                    sx={{
-                      height: '100%',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: 3,
-                      overflow: 'hidden',
-                      '&:hover': {
-                        background: 'rgba(255, 255, 255, 0.15)',
-                      },
-                    }}
-                  >
-                    <Box sx={{ position: 'relative' }}>
-                      <CardMedia
-                        component="img"
-                        height="200"
-                        image={song.coverImage}
-                        alt={song.title}
+            {loading ? (
+              <Grid item xs={12}>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
+                  <CircularProgress sx={{ color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Loading songs...
+                  </Typography>
+                </Box>
+              </Grid>
+            ) : (
+              filteredSongs.map((song, index) => {
+                const localPrice = getLocalPrice(song.price_per_token_usd);
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={song.id}>
+                    <motion.div
+                      variants={cardVariants}
+                      whileHover="hover"
+                    >
+                      <Card
                         sx={{
-                          objectFit: 'cover',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 16,
-                          right: 16,
+                          height: '100%',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: 3,
+                          overflow: 'hidden',
+                          '&:hover': {
+                            background: 'rgba(255, 255, 255, 0.15)',
+                          },
                         }}
                       >
-                        <Chip
-                          label={song.status}
-                          color={getStatusColor(song.status)}
-                          size="small"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: 16,
-                          right: 16,
-                        }}
-                      >
-                        <IconButton
-                          onClick={() => handlePlayPause(song.id)}
-                          sx={{
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            color: 'white',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            },
-                          }}
-                        >
-                          {playingTrack === song.id ? <Pause /> : <PlayArrow />}
-                        </IconButton>
-                      </Box>
-                    </Box>
-
-                    <CardContent sx={{ p: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar
-                          src={song.artistImage}
-                          sx={{ width: 40, height: 40, mr: 2 }}
-                        />
-                        <Box>
-                          <Typography
-                            variant="h6"
+                        <Box sx={{ position: 'relative' }}>
+                          {song.cover_image_url && (
+                            <CardMedia
+                              component="img"
+                              height="200"
+                              image={song.cover_image_url}
+                              alt={song.title}
+                              sx={{
+                                objectFit: 'cover',
+                              }}
+                            />
+                          )}
+                          <Box
                             sx={{
-                              color: 'white',
-                              fontWeight: 600,
-                              mb: 0.5,
+                              position: 'absolute',
+                              top: 16,
+                              right: 16,
                             }}
                           >
-                            {song.title}
-                          </Typography>
+                            <Chip
+                              label={getStatusLabel(song.status)}
+                              color={getStatusColor(song.status)}
+                              size="small"
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </Box>
+                          {song.audio_file_url && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 16,
+                                right: 16,
+                              }}
+                            >
+                              <IconButton
+                                onClick={() => handlePlayPause(song.id)}
+                                sx={{
+                                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                  color: 'white',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                  },
+                                }}
+                              >
+                                {playingTrack === song.id ? <Pause /> : <PlayArrow />}
+                              </IconButton>
+                            </Box>
+                          )}
+                        </Box>
+
+                        <CardContent sx={{ p: 3 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Avatar
+                              sx={{ 
+                                width: 40, 
+                                height: 40, 
+                                mr: 2,
+                                backgroundColor: 'primary.main',
+                                color: 'white',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {song.artist_name.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  color: 'white',
+                                  fontWeight: 600,
+                                  mb: 0.5,
+                                }}
+                              >
+                                {song.title}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: 'rgba(255, 255, 255, 0.7)',
+                                }}
+                              >
+                                {song.artist_name}
+                              </Typography>
+                            </Box>
+                          </Box>
+
                           <Typography
                             variant="body2"
                             sx={{
-                              color: 'rgba(255, 255, 255, 0.7)',
+                              color: 'rgba(255, 255, 255, 0.8)',
+                              mb: 3,
+                              lineHeight: 1.6,
                             }}
                           >
-                            {song.artist}
+                            {song.description}
                           </Typography>
-                        </Box>
-                      </Box>
 
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'rgba(255, 255, 255, 0.8)',
-                          mb: 3,
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {song.description}
-                      </Typography>
+                          <Box sx={{ mb: 3 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                                Release Date
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                                {formatDate(song.release_date)}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                                Price per Token
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                                {localPrice.formatted}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                                Tokens Sold
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                                {song.tokens_sold.toLocaleString()} / {song.total_tokens.toLocaleString()}
+                              </Typography>
+                            </Box>
+                          </Box>
 
-                      <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                            Release Date
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                            {formatDate(song.releaseDate)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                            Price per Token
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                            ${song.pricePerToken}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                            Tokens Sold
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                            {song.tokensSold} / {song.tokensAvailable}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-                        <Button
-                          variant="contained"
-                          fullWidth
-                          sx={{
-                            background: 'linear-gradient(135deg, #3b82f6, #a855f7)',
-                            '&:hover': {
-                              background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
-                            },
-                          }}
-                        >
-                          Invest Now
-                        </Button>
-                        <IconButton
-                          sx={{
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            '&:hover': {
-                              color: 'primary.main',
-                            },
-                          }}
-                        >
-                          <Favorite />
-                        </IconButton>
-                        <IconButton
-                          sx={{
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            '&:hover': {
-                              color: 'primary.main',
-                            },
-                          }}
-                        >
-                          <Share />
-                        </IconButton>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </Grid>
-            ))}
+                          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                            <Button
+                              variant="contained"
+                              fullWidth
+                              disabled={song.status !== 'live'}
+                              onClick={!user ? handleUnauthenticatedClick : undefined}
+                              sx={{
+                                background: song.status === 'live' 
+                                  ? 'linear-gradient(135deg, #3b82f6, #a855f7)'
+                                  : 'rgba(255, 255, 255, 0.1)',
+                                '&:hover': {
+                                  background: song.status === 'live'
+                                    ? 'linear-gradient(135deg, #1d4ed8, #7c3aed)'
+                                    : 'rgba(255, 255, 255, 0.1)',
+                                },
+                              }}
+                            >
+                              {song.status === 'live' ? 'Invest Now' : 'Coming Soon'}
+                            </Button>
+                            <IconButton
+                              onClick={!user ? handleUnauthenticatedClick : undefined}
+                              sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                },
+                              }}
+                            >
+                              <Favorite />
+                            </IconButton>
+                            <IconButton
+                              onClick={!user ? handleUnauthenticatedClick : undefined}
+                              sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                },
+                              }}
+                            >
+                              <Share />
+                            </IconButton>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </Grid>
+                );
+              })
+            )}
           </Grid>
 
           {filteredSongs.length === 0 && (
@@ -516,6 +656,20 @@ const Upcoming = () => {
                 <MusicNote sx={{ fontSize: 64, color: 'rgba(255, 255, 255, 0.3)', mb: 2 }} />
                 <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                   No songs found matching your criteria
+                </Typography>
+              </Box>
+            </motion.div>
+          )}
+
+          {/* Authentication reminder for unauthenticated users */}
+          {!user && (
+            <motion.div variants={itemVariants}>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 2 }}>
+                  🔒 Sign up to access all features
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                  Create an account to invest in songs, create playlists, and more
                 </Typography>
               </Box>
             </motion.div>

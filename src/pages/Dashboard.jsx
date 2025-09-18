@@ -23,8 +23,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { runBackendTests } from '../lib/backendTest.js';
 import WalletCreation from '../components/WalletCreation';
+import SongSubmission from '../components/SongSubmission';
 
 const Dashboard = () => {
   const { userProfile } = useAuth();
@@ -481,6 +481,23 @@ const Dashboard = () => {
         </Box>
 
         {getRoleSpecificContent()}
+
+        {/* Song Submission Section for Artists */}
+        {userProfile.role === 'creator' && (
+          <motion.div variants={itemVariants} sx={{ mt: 4 }}>
+            <Card sx={{ mb: 4 }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h4" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
+                  Submit Your Song
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4 }}>
+                  Create and submit your song for tokenization. Once approved by our admin team, it will be available for fans to invest in.
+                </Typography>
+                <SongSubmission />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Wallet Creation Section */}
         <motion.div variants={itemVariants} sx={{ mt: 4 }}>

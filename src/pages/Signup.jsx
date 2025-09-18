@@ -28,12 +28,6 @@ const Signup = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Debug logging
-  console.log('Auth context:', auth);
-  console.log('signUp function:', signUp);
-  console.log('typeof signUp:', typeof signUp);
-  console.log('signInWithGoogle function:', signInWithGoogle);
-  console.log('typeof signInWithGoogle:', typeof signInWithGoogle);
 
   // Show error if signUp is not available
   if (!signUp || typeof signUp !== 'function' || !signInWithGoogle || typeof signInWithGoogle !== 'function') {
@@ -133,7 +127,6 @@ const Signup = () => {
       // Note: The redirect to Google's OAuth page will happen automatically
       // The user will be redirected back to the callback URL after authentication
     } catch (error) {
-      console.error('Google signup error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
     }
   };
@@ -172,7 +165,6 @@ const Signup = () => {
       const { data, error } = await signUp(formData.email, formData.password, formData.role);
 
       if (error) {
-        console.error('Signup error details:', error);
         setError(error.message || 'Signup failed. Please try again.');
         
         // If user already exists, show sign in option
@@ -189,11 +181,9 @@ const Signup = () => {
         });
       } else {
         // Handle case where signup succeeded but no user data returned
-        console.log('Signup completed but no user data returned');
         setError('Signup completed but there was an issue. Please try again.');
       }
     } catch (error) {
-      console.error('Signup error:', error);
       setError(error.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

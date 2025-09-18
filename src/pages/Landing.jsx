@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 import {
   AppBar,
   Toolbar,
@@ -49,6 +50,14 @@ const features = [
 const Landing = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Handle clicks for unauthenticated users
+  const handleUnauthenticatedClick = (e) => {
+    e.preventDefault();
+    navigate('/signup');
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },

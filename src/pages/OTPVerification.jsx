@@ -89,7 +89,6 @@ const OTPVerification = () => {
       if (error) throw error;
 
       if (data.user) {
-        console.log('OTP verified successfully, user signed in:', data.user.email);
         
         // Create user record in database
         try {
@@ -107,20 +106,16 @@ const OTPVerification = () => {
             });
 
           if (dbError) {
-            console.error('Database error:', dbError);
             // Don't fail the flow for database errors
           } else {
-            console.log('User record created/updated in database');
           }
         } catch (dbError) {
-          console.error('Database error during user creation:', dbError);
         }
 
         // Redirect to dashboard
         navigate('/dashboard');
       }
     } catch (error) {
-      console.error('OTP verification error:', error);
       setError(error.message || 'Invalid OTP. Please try again.');
     } finally {
       setIsVerifying(false);

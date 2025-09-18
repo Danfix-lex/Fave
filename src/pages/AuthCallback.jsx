@@ -56,13 +56,11 @@ const AuthCallback = () => {
           ], { onConflict: 'id' });
         } catch (e) {
           // non-fatal
-          console.error('User upsert error:', e);
         }
 
         // Redirect post-login to Landing page with a full reload to ensure header sees session
         window.location.replace('/');
       } catch (e) {
-        console.error('Auth callback error:', e);
         setError(e.message || 'Authentication failed');
       }
     };

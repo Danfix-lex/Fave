@@ -6,9 +6,6 @@ const ProtectedRoute = ({ children, requiredRole = null, requireKYC = false }) =
   const { user, userProfile, loading } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute loading:', loading);
-  console.log('ProtectedRoute user:', user);
-  console.log('ProtectedRoute userProfile:', userProfile);
 
   if (loading) {
     return (

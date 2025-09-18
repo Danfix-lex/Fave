@@ -47,7 +47,6 @@ const BackendStatus = () => {
       setEnvCheck(envResults);
       setDbCheck(dbResults);
     } catch (error) {
-      console.error('Error running tests:', error);
     } finally {
       setIsRunning(false);
     }
@@ -247,7 +246,7 @@ const BackendStatus = () => {
               <Button
                 size="small"
                 startIcon={<Security />}
-                onClick={() => console.log('Environment check:', envCheck)}
+                onClick={() => {}}
                 sx={{ color: 'white', justifyContent: 'flex-start' }}
               >
                 Log Environment Info
@@ -255,7 +254,7 @@ const BackendStatus = () => {
               <Button
                 size="small"
                 startIcon={<Speed />}
-                onClick={() => console.log('Test results:', results)}
+                onClick={() => {}}
                 sx={{ color: 'white', justifyContent: 'flex-start' }}
               >
                 Log Test Results

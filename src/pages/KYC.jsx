@@ -155,7 +155,6 @@ const KYC = () => {
   useEffect(() => {
     // Redirect to dashboard if KYC is already complete
     if (userProfile?.is_kyc_complete) {
-      console.log('KYC already complete, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
       return;
     }
@@ -178,7 +177,7 @@ const KYC = () => {
       if (error) throw error;
       setDistributors(data || []);
     } catch (error) {
-      console.error('Error fetching distributors:', error);
+      // Handle error silently
     }
   };
 
@@ -226,7 +225,6 @@ const KYC = () => {
       });
       setPhotoPreview(URL.createObjectURL(file));
     } catch (error) {
-      console.error('Error uploading photo:', error);
       setError('Failed to upload photo. Please try again.');
     }
   };
@@ -252,7 +250,6 @@ const KYC = () => {
       if (result.error) {
         setError(result.error.message);
       } else {
-        console.log('KYC completed successfully, redirecting to dashboard');
         navigate('/dashboard', { replace: true });
       }
     } catch (error) {

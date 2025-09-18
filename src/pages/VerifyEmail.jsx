@@ -47,7 +47,6 @@ const VerifyEmail = () => {
 
   const handleResendEmail = () => {
     // TODO: Implement resend email functionality
-    console.log('Resend email requested for:', email);
   };
 
   const handleGoToLogin = () => {

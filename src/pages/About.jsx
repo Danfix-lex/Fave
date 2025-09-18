@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Container,
   Typography,
@@ -23,6 +25,14 @@ import {
 const About = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Handle clicks for unauthenticated users
+  const handleUnauthenticatedClick = (e) => {
+    e.preventDefault();
+    navigate('/signup');
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Container,
   Typography,
@@ -26,6 +28,8 @@ import {
 const Contact = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,6 +38,12 @@ const Contact = () => {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Handle clicks for unauthenticated users
+  const handleUnauthenticatedClick = (e) => {
+    e.preventDefault();
+    navigate('/signup');
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -44,6 +54,13 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!user) {
+      navigate('/signup');
+      return;
+    }
+    
     setLoading(true);
     
     // Simulate form submission

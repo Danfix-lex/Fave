@@ -33,39 +33,25 @@ const EmailConfirmation = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('Handling auth callback...');
-        console.log('Current URL:', window.location.href);
-        console.log('URL hash:', window.location.hash);
-        console.log('URL search params:', window.location.search);
-        
         // Check if this is a Supabase auth callback with token in query params
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         const type = urlParams.get('type');
         
-        console.log('Token from URL:', token);
-        console.log('Type from URL:', type);
-        
         if (token && type === 'signup') {
-          console.log('Processing Supabase email verification token...');
-          
           // Use the correct method for email verification
           const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
             token: token,
             type: 'signup'
           });
           
-          console.log('Email verification result:', verifyData, verifyError);
-          
           if (verifyError) {
-            console.error('Email verification error:', verifyError);
             setError(`Email verification failed: ${verifyError.message}`);
             setStatus('error');
             return;
           }
           
           if (verifyData?.user?.email_confirmed_at) {
-            console.log('User verified successfully:', verifyData.user.email);
             setUserEmail(verifyData.user.email);
             setStatus('authenticated');
             
@@ -85,12 +71,10 @@ const EmailConfirmation = () => {
                 });
 
               if (dbError) {
-                console.error('Database error:', dbError);
-              } else {
-                console.log('User record updated in database');
+                // Handle database error silently
               }
             } catch (dbError) {
-              console.error('Database error during user update:', dbError);
+              // Handle database error silently
             }
             
             // Show success message for 3 seconds, then redirect to sign-in
@@ -103,7 +87,6 @@ const EmailConfirmation = () => {
             
             return;
           } else {
-            console.log('Verification succeeded but user not confirmed');
             setError('Email verification completed but user confirmation failed. Please try signing in.');
             setStatus('error');
             return;
@@ -121,7 +104,6 @@ const EmailConfirmation = () => {
         setError('Email verification failed. Please check your email and try again.');
         setStatus('error');
       } catch (error) {
-        console.error('Unexpected error:', error);
         setError('An unexpected error occurred. Please try again.');
         setStatus('error');
       }
@@ -129,10 +111,7 @@ const EmailConfirmation = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email);
-      
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        console.log('User signed in and verified via auth state change');
         setUserEmail(session.user.email);
         setStatus('authenticated');
         
@@ -152,12 +131,10 @@ const EmailConfirmation = () => {
             });
 
           if (dbError) {
-            console.error('Database error:', dbError);
-          } else {
-            console.log('User record updated in database');
+            // Handle database error silently
           }
         } catch (dbError) {
-          console.error('Database error during user update:', dbError);
+          // Handle database error silently
         }
         
         // Show success message for 3 seconds, then redirect to sign-in
