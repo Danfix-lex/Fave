@@ -49,57 +49,13 @@ const EmailConfirmation = () => {
         if (token && type === 'signup') {
           console.log('Processing Supabase email verification token...');
           
-          // Try different verification methods
-          let verifyData = null;
-          let verifyError = null;
+          // Use the correct method for email verification
+          const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+            token: token,
+            type: 'signup'
+          });
           
-          // Method 1: Try verifyOtp with token_hash
-          try {
-            const result1 = await supabase.auth.verifyOtp({
-              token_hash: token,
-              type: 'signup'
-            });
-            verifyData = result1.data;
-            verifyError = result1.error;
-            console.log('Method 1 (token_hash) result:', verifyData, verifyError);
-          } catch (err) {
-            console.log('Method 1 failed:', err.message);
-          }
-          
-          // Method 2: Try verifyOtp with token (not token_hash)
-          if (verifyError) {
-            try {
-              const result2 = await supabase.auth.verifyOtp({
-                token: token,
-                type: 'signup'
-              });
-              verifyData = result2.data;
-              verifyError = result2.error;
-              console.log('Method 2 (token) result:', verifyData, verifyError);
-            } catch (err) {
-              console.log('Method 2 failed:', err.message);
-            }
-          }
-          
-          // Method 3: Try verifyOtp with email and token
-          if (verifyError) {
-            try {
-              // Extract email from token if possible, or use a placeholder
-              const result3 = await supabase.auth.verifyOtp({
-                email: 'user@example.com', // This might need to be the actual email
-                token: token,
-                type: 'signup'
-              });
-              verifyData = result3.data;
-              verifyError = result3.error;
-              console.log('Method 3 (email + token) result:', verifyData, verifyError);
-            } catch (err) {
-              console.log('Method 3 failed:', err.message);
-            }
-          }
-          
-          console.log('Final verify response:', verifyData);
-          console.log('Final verify error:', verifyError);
+          console.log('Email verification result:', verifyData, verifyError);
           
           if (verifyError) {
             console.error('Email verification error:', verifyError);
@@ -154,169 +110,16 @@ const EmailConfirmation = () => {
           }
         }
         
-        // Fallback: Check for URL hash with access_token (OAuth flow)
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-          console.log('Processing URL hash for auth tokens...');
-          const { data: hashData, error: hashError } = await supabase.auth.getSession();
-          
-          if (hashError) {
-            console.error('Hash processing error:', hashError);
-            setError(hashError.message);
-            setStatus('error');
-            return;
-          }
-          
-          if (hashData.session?.user?.email_confirmed_at) {
-            console.log('User verified from hash:', hashData.session.user.email);
-            setUserEmail(hashData.session.user.email);
-            setStatus('authenticated');
-            
-            // Update user record
-            try {
-              const { error: dbError } = await supabase
-                .from('users')
-                .upsert([{
-                  id: hashData.session.user.id,
-                  email: hashData.session.user.email,
-                  role: 'fan',
-                  is_kyc_complete: false,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                }], {
-                  onConflict: 'id'
-                });
-
-              if (dbError) {
-                console.error('Database error:', dbError);
-              } else {
-                console.log('User record updated in database');
-              }
-            } catch (dbError) {
-              console.error('Database error during user update:', dbError);
-            }
-            
-            // Show success message for 3 seconds, then redirect to sign-in
-            setTimeout(() => {
-              setShowRedirectMessage(true);
-              setTimeout(() => {
-                navigate('/login');
-              }, 2000);
-            }, 3000);
-            
-            return;
-          }
-        }
-        
-        // Fallback: Handle the auth callback from URL hash
-        const { data, error } = await supabase.auth.getSession();
-        
-        console.log('Session data:', data);
-        console.log('Session error:', error);
-        
-        if (error) {
-          console.error('Auth callback error:', error);
-          setError(error.message);
+        // If no token found, show error
+        if (!token || type !== 'signup') {
+          setError('Invalid verification link. Please check your email and try again.');
           setStatus('error');
           return;
         }
-
-        // If we have a token but no session, try to process it as a direct verification
-        if (token && !data.session) {
-          console.log('Token found but no session, trying direct verification...');
-          
-          // Try to verify the token directly
-          try {
-            const { data: directVerify, error: directError } = await supabase.auth.verifyOtp({
-              token: token,
-              type: 'signup'
-            });
-            
-            console.log('Direct verification result:', directVerify, directError);
-            
-            if (directVerify?.user?.email_confirmed_at) {
-              console.log('Direct verification successful');
-          setStatus('success');
-              setTimeout(() => navigate('/dashboard'), 2000);
-              return;
-            }
-          } catch (directErr) {
-            console.log('Direct verification failed:', directErr.message);
-          }
-        }
-
-        // If we have a session and user is verified, show authenticated status
-        if (data.session?.user?.email_confirmed_at) {
-          console.log('User verified and signed in:', data.session.user.email);
-          setUserEmail(data.session.user.email);
-          setStatus('authenticated');
-          
-          // User record should already exist from signup, just update if needed
-          try {
-            const { error: dbError } = await supabase
-              .from('users')
-              .upsert([{
-                id: data.session.user.id,
-                email: data.session.user.email,
-                role: 'fan', // Default role, will be updated in KYC
-                is_kyc_complete: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }], {
-                onConflict: 'id'
-              });
-
-            if (dbError) {
-              console.error('Database error:', dbError);
-              // Don't fail the flow for database errors
-            } else {
-              console.log('User record updated in database');
-            }
-          } catch (dbError) {
-            console.error('Database error during user update:', dbError);
-          }
-          
-          // Show success message for 3 seconds, then redirect to sign-in
-          setTimeout(() => {
-            setShowRedirectMessage(true);
-            setTimeout(() => {
-              navigate('/login');
-            }, 2000);
-          }, 3000);
-        } else {
-          // Check if we have URL hash with auth tokens but no session yet
-          if (window.location.hash && window.location.hash.includes('access_token')) {
-            console.log('URL contains auth tokens, waiting for session...');
-            // Wait a bit for the session to be established
-            setTimeout(async () => {
-              const { data: retryData, error: retryError } = await supabase.auth.getSession();
-              if (retryData.session?.user?.email_confirmed_at) {
-                console.log('User verified after retry:', retryData.session.user.email);
-                setStatus('success');
-                setTimeout(() => navigate('/dashboard'), 2000);
-              } else {
-                setError('Email verification failed. The verification link may have expired or been used already.');
-                setStatus('error');
-              }
-            }, 2000);
-            return;
-          }
-          
-          // Check if we have a token but it's not a signup token
-          if (token && type !== 'signup') {
-            setError(`Invalid verification type: ${type}. Please use the signup verification link.`);
-            setStatus('error');
-            return;
-          }
-          
-          // Check if user exists but not verified
-          if (data.session?.user && !data.session.user.email_confirmed_at) {
-            setError('Email not yet verified. Please check your email and click the verification link.');
-            setStatus('error');
-          } else {
-            setError('Email verification failed. Please check your email and click the verification link again, or try signing up again.');
-          setStatus('error');
-          }
-        }
+        
+        // This should not be reached if token verification worked above
+        setError('Email verification failed. Please check your email and try again.');
+        setStatus('error');
       } catch (error) {
         console.error('Unexpected error:', error);
         setError('An unexpected error occurred. Please try again.');
