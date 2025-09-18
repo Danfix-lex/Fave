@@ -27,7 +27,7 @@ import {
   Security,
   Speed,
 } from '@mui/icons-material';
-import { runBackendTests, checkEnvironment, checkDatabase } from '../lib/backendTest';
+import { supabase } from '../lib/supabase';
 
 const BackendStatus = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -39,22 +39,90 @@ const BackendStatus = () => {
   const runTests = async () => {
     setIsRunning(true);
     try {
-      const testResults = await runBackendTests();
-      const envResults = checkEnvironment();
-      const dbResults = await checkDatabase();
+      // Real production tests
+      const testResults = [];
+      
+      // Test Supabase connection
+      try {
+        const { data, error } = await supabase.from('users').select('count').limit(1);
+        testResults.push({ 
+          name: 'Supabase Connection', 
+          status: error ? 'FAIL' : 'PASS',
+          error: error?.message 
+        });
+      } catch (err) {
+        testResults.push({ 
+          name: 'Supabase Connection', 
+          status: 'FAIL',
+          error: err.message 
+        });
+      }
+      
+      // Test authentication
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        testResults.push({ 
+          name: 'Authentication', 
+          status: 'PASS' 
+        });
+      } catch (err) {
+        testResults.push({ 
+          name: 'Authentication', 
+          status: 'FAIL',
+          error: err.message 
+        });
+      }
+      
+      // Test database tables
+      const dbResults = {};
+      const tables = ['users', 'user_profiles', 'songs', 'song_submissions'];
+      
+      for (const table of tables) {
+        try {
+          const { data, error } = await supabase.from(table).select('count').limit(1);
+          dbResults[table] = { 
+            exists: !error, 
+            count: data?.length || 0,
+            error: error?.message 
+          };
+        } catch (err) {
+          dbResults[table] = { 
+            exists: false, 
+            count: 0,
+            error: err.message 
+          };
+        }
+      }
+      
+      // Environment check
+      const envResults = {
+        isValid: !!(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY),
+        issues: []
+      };
+      
+      if (!process.env.VITE_SUPABASE_URL) envResults.issues.push('Missing VITE_SUPABASE_URL');
+      if (!process.env.VITE_SUPABASE_ANON_KEY) envResults.issues.push('Missing VITE_SUPABASE_ANON_KEY');
       
       setResults(testResults);
       setEnvCheck(envResults);
       setDbCheck(dbResults);
     } catch (error) {
+      setResults([{ name: 'System Test', status: 'FAIL', error: error.message }]);
     } finally {
       setIsRunning(false);
     }
   };
 
   useEffect(() => {
-    // Run initial check
-    const envResults = checkEnvironment();
+    // Run initial environment check
+    const envResults = {
+      isValid: !!(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY),
+      issues: []
+    };
+    
+    if (!process.env.VITE_SUPABASE_URL) envResults.issues.push('Missing VITE_SUPABASE_URL');
+    if (!process.env.VITE_SUPABASE_ANON_KEY) envResults.issues.push('Missing VITE_SUPABASE_ANON_KEY');
+    
     setEnvCheck(envResults);
   }, []);
 

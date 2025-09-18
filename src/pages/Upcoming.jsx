@@ -44,6 +44,7 @@ import {
   formatCurrency 
 } from '../lib/currency';
 import { supabase } from '../lib/supabase';
+import { MUSIC_GENRES } from '../lib/constants';
 
 const Upcoming = () => {
   const theme = useTheme();
@@ -105,94 +106,9 @@ const Upcoming = () => {
     },
   };
 
-  const upcomingSongs = [
-    {
-      id: 1,
-      title: "Midnight Dreams",
-      artist: "Luna Star",
-      genre: "Electronic",
-      releaseDate: "2024-02-15",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-      description: "A mesmerizing electronic journey through the night sky.",
-      tokensAvailable: 1000,
-      tokensSold: 750,
-      pricePerToken: 0.1,
-      status: "Live",
-    },
-    {
-      id: 2,
-      title: "City Lights",
-      artist: "Urban Beats",
-      genre: "Hip-Hop",
-      releaseDate: "2024-02-20",
-      coverImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      description: "Raw energy and authentic street vibes in this upcoming hit.",
-      tokensAvailable: 2000,
-      tokensSold: 1200,
-      pricePerToken: 0.05,
-      status: "Live",
-    },
-    {
-      id: 3,
-      title: "Ocean Waves",
-      artist: "Marina Blue",
-      genre: "Indie",
-      releaseDate: "2024-02-25",
-      coverImage: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
-      description: "Dreamy indie melodies that capture the essence of the sea.",
-      tokensAvailable: 1500,
-      tokensSold: 0,
-      pricePerToken: 0.08,
-      status: "Coming Soon",
-    },
-    {
-      id: 4,
-      title: "Digital Love",
-      artist: "Cyber Pop",
-      genre: "Pop",
-      releaseDate: "2024-03-01",
-      coverImage: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-      description: "A futuristic pop anthem about love in the digital age.",
-      tokensAvailable: 3000,
-      tokensSold: 2100,
-      pricePerToken: 0.12,
-      status: "Live",
-    },
-    {
-      id: 5,
-      title: "Mountain High",
-      artist: "Peak Sounds",
-      genre: "Rock",
-      releaseDate: "2024-03-05",
-      coverImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      description: "Powerful rock anthem that reaches for the sky.",
-      tokensAvailable: 1800,
-      tokensSold: 0,
-      pricePerToken: 0.15,
-      status: "Coming Soon",
-    },
-    {
-      id: 6,
-      title: "Jazz Nights",
-      artist: "Smooth Sax",
-      genre: "Jazz",
-      releaseDate: "2024-03-10",
-      coverImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-      artistImage: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-      description: "Smooth jazz melodies perfect for late-night listening.",
-      tokensAvailable: 1200,
-      tokensSold: 800,
-      pricePerToken: 0.09,
-      status: "Live",
-    },
-  ];
+  // Removed hardcoded mock data - using database data only
 
-  const genres = ['All', 'Electronic', 'Hip-Hop', 'Indie', 'Pop', 'Rock', 'Jazz'];
+  const genres = ['All', ...MUSIC_GENRES];
 
   useEffect(() => {
     // Redirect unauthenticated users to signup

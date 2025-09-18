@@ -26,8 +26,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { getZkLoginNonce } from '@mysten/sui.js/zklogin';
+// SUI SDK imports with fallback for production builds
+import { createSuiKeypair, generateSuiNonce } from '../lib/suiUtils';
 
 const WalletCreation = ({ userProfile }) => {
   const theme = useTheme();
@@ -55,20 +55,20 @@ const WalletCreation = ({ userProfile }) => {
       setLoading(true);
       setError('');
       
-      // Generate real Ed25519 keypair
-      const keypair = new Ed25519Keypair();
+      // Generate keypair using utility function
+      const keypair = await createSuiKeypair();
       const publicKey = keypair.getPublicKey();
       const secretKey = keypair.getSecretKey();
       
       // Convert secret key to hex for storage
-      const secretKeyHex = Buffer.from(secretKey).toString('hex');
+      const secretKeyHex = Buffer.from(secretKey.toString()).toString('hex');
       
       // Store in session storage
       sessionStorage.setItem("esk", secretKeyHex);
       setEphemeralKey({ publicKey, secretKey });
       
-      // Generate real nonce for ZK Login
-      const nonceValue = generateNonce(publicKey, { maxEpoch: 1000 });
+      // Generate nonce using utility function
+      const nonceValue = await generateSuiNonce(publicKey, { maxEpoch: 1000 });
       setNonce(nonceValue);
       
       setActiveStep(1);
@@ -79,13 +79,8 @@ const WalletCreation = ({ userProfile }) => {
     }
   };
 
-  const generateNonce = (publicKey, options) => {
-    try {
-      return getZkLoginNonce(publicKey, options);
-    } catch (err) {
-      // Fallback to a simple nonce if SUI SDK fails
-      return `nonce_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
+  const generateNonce = async (publicKey, options) => {
+    return await generateSuiNonce(publicKey, options);
   };
 
   const handleGoogleAuth = async () => {
@@ -161,8 +156,7 @@ const WalletCreation = ({ userProfile }) => {
       }
       
       // Reconstruct keypair from stored secret key
-      const secretKeyBytes = Buffer.from(storedSecretKey, 'hex');
-      const keypair = new Ed25519Keypair();
+      const keypair = await createSuiKeypair();
       const publicKey = keypair.getPublicKey();
       
       // Generate deterministic SUI wallet address

@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { MUSIC_GENRES } from '../lib/constants';
 
 const SongSubmission = () => {
   const theme = useTheme();
@@ -50,10 +51,7 @@ const SongSubmission = () => {
   const [success, setSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const genres = [
-    'Electronic', 'Hip-Hop', 'Indie', 'Pop', 'Rock', 'Jazz', 
-    'R&B', 'Country', 'Classical', 'Reggae', 'Afrobeat', 'Gospel'
-  ];
+  const genres = MUSIC_GENRES;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
