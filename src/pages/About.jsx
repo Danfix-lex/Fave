@@ -104,26 +104,26 @@ const About = () => {
       name: 'Stephen Omotoso',
       role: 'Frontend Developer',
       image: '/work picture.jpg',
-      description: 'Our Frontend developer is responsible for bringing out the work of the designer to live',
+      description: 'Our Frontend developer is responsible for bringing out the work of the designer to live.',
     },
     {
       name: 'Ojo Daniel',
       role: 'UI/UX Designer',
       image: '/Daniel.jpg',
-      description: 'Experienced UI/UX designer responsible for how the platform will look, good and professtional ',
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Smart Contract Developer',
-      image: '/Uzo.jpg',
       description: 'Our UI/UX Designer, creates intuitive, elegant digital experiences aligning user needs with business goals.',
     },
     {
-      name: 'David Kim',
-      role: 'Backend Developer',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-      description: 'Marketing veteran with expertise in growth hacking and community building.',
-    },
+      name: 'Uzo Chukwu',
+      role: 'Smart Contract Developer',
+      image: '/Uzo.jpg',
+      description: 'He is responsible for the smart contract, making sure there is transparency.',
+    }
+    // {
+    //   name: 'David Kim',
+    //   role: 'Backend Developer',
+    //   image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+    //   description: 'Marketing veteran with expertise in growth hacking and community building.',
+    // },
   ];
 
   return (
