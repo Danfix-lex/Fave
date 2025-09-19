@@ -144,7 +144,11 @@ const Dashboard = () => {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (userProfile?.role === 'creator') {
+      // Default to fan data if role is missing or undefined
+      const role = userProfile?.role || 'fan';
+      console.log('Dashboard - setting analytics data for role:', role);
+      
+      if (role === 'creator') {
         setAnalyticsData(mockArtistData);
       } else {
         setAnalyticsData(mockFanData);
@@ -152,12 +156,17 @@ const Dashboard = () => {
       setLoading(false);
     };
 
-    fetchAnalytics();
+    if (userProfile) {
+      fetchAnalytics();
+    }
   }, [userProfile, refreshKey]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  // Debug logging
+  console.log('Dashboard - userProfile:', userProfile);
 
   if (!userProfile) {
     return (
@@ -178,12 +187,21 @@ const Dashboard = () => {
         <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1 }}>
           This may take a few moments
         </Typography>
+        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.5)', mt: 2, fontSize: '0.8rem' }}>
+          Debug: userProfile is {userProfile === null ? 'null' : userProfile === undefined ? 'undefined' : 'present'}
+        </Typography>
       </Box>
     );
   }
 
-  if (!userProfile.is_kyc_complete) {
+  // If KYC is not complete, redirect to KYC
+  if (userProfile && !userProfile.is_kyc_complete) {
     return <Navigate to="/kyc" replace />;
+  }
+
+  // If we have a userProfile but it's incomplete, show a basic dashboard
+  if (userProfile && !userProfile.role) {
+    console.log('Dashboard - userProfile exists but role is missing, showing basic dashboard');
   }
 
   const containerVariants = {

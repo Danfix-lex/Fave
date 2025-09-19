@@ -99,6 +99,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchFullProfile = async (userId) => {
+    console.log('AuthContext - fetchFullProfile called for userId:', userId);
     try {
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
@@ -282,6 +283,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfile = async (profileData) => {
+    console.log('AuthContext - updateProfile called with:', profileData);
     try {
       if (user?.id) {
         // Prepare profile data for upsert
@@ -290,24 +292,40 @@ export const AuthProvider = ({ children }) => {
           ...profileData
         };
 
+        console.log('AuthContext - upserting profile data:', profileDataToSave);
         const result = await profileService.upsertProfile(profileDataToSave);
+        console.log('AuthContext - profile upsert result:', result);
+        
         if (result.success) {
-          setUserProfile(prev => ({
-            ...prev,
-            profile: result.data
-          }));
+          setUserProfile(prev => {
+            const newProfile = {
+              ...prev,
+              profile: result.data
+            };
+            console.log('AuthContext - updated userProfile with profile:', newProfile);
+            return newProfile;
+          });
         } else {
+          console.error('AuthContext - profile upsert failed:', result.error);
           return { error: result.error };
         }
         
         // Update KYC status in users table
+        console.log('AuthContext - updating KYC status for user:', user.id);
         const kycResult = await userService.updateKYCStatus(user.id, true);
+        console.log('AuthContext - KYC update result:', kycResult);
+        
         if (kycResult.success) {
-          setUserProfile(prev => ({
-            ...prev,
-            is_kyc_complete: true
-          }));
+          setUserProfile(prev => {
+            const newProfile = {
+              ...prev,
+              is_kyc_complete: true
+            };
+            console.log('AuthContext - updated userProfile with KYC complete:', newProfile);
+            return newProfile;
+          });
         } else {
+          console.error('AuthContext - KYC update failed:', kycResult.error);
           return { error: kycResult.error };
         }
 
