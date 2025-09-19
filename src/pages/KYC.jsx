@@ -378,7 +378,7 @@ const KYC = () => {
 
       const result = await updateProfile(profileData);
       if (result.error) {
-        setError(result.error.message);
+        setError(result.error.message || 'An error occurred. Please try again.');
       } else {
         navigate('/dashboard', { replace: true });
       }

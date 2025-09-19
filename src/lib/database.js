@@ -86,6 +86,23 @@ export const userService = {
     }
   },
 
+  // Update user
+  async updateUser(userId, updateData) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: handleSupabaseError(error, 'updateUser') };
+    }
+  },
+
   // Get all users (admin only)
   async getAllUsers() {
     try {

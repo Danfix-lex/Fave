@@ -270,26 +270,39 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       if (user?.id) {
-        const result = await profileService.updateProfile(user.id, profileData);
+        // Prepare profile data for upsert
+        const profileDataToSave = {
+          user_id: user.id,
+          ...profileData
+        };
+
+        const result = await profileService.upsertProfile(profileDataToSave);
         if (result.success) {
           setUserProfile(prev => ({
             ...prev,
             profile: result.data
           }));
+        } else {
+          return { error: result.error };
         }
         
-        // Update KYC status if provided
-        if (profileData.is_kyc_complete !== undefined) {
-          const kycResult = await userService.updateUser(user.id, {
-            is_kyc_complete: profileData.is_kyc_complete
-          });
-          if (kycResult.error) {
-            // Handle KYC update error silently
-          }
+        // Update KYC status in users table
+        const kycResult = await userService.updateKYCStatus(user.id, true);
+        if (kycResult.success) {
+          setUserProfile(prev => ({
+            ...prev,
+            is_kyc_complete: true
+          }));
+        } else {
+          return { error: kycResult.error };
         }
+
+        return { success: true };
       }
+      return { error: new Error('User not found') };
     } catch (error) {
-      // Handle profile update error silently
+      console.error('Profile update error:', error);
+      return { error: error };
     }
   };
 
