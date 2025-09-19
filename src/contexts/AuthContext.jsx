@@ -110,11 +110,12 @@ export const AuthProvider = ({ children }) => {
         // First, get the user's role and basic info from users table
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('role, is_kyc_complete')
+          .select('role, is_kyc_complete, email, created_at, updated_at')
           .eq('id', userId)
           .single();
 
         if (userError) {
+          console.log('User not found in database, creating new user:', userId);
           // If user doesn't exist in users table, create them
           const { error: insertError } = await supabase
             .from('users')
@@ -128,6 +129,7 @@ export const AuthProvider = ({ children }) => {
             }]);
 
           if (insertError) {
+            console.error('Failed to create user:', insertError);
             // Set default profile if database operations fail
             setUserProfile({
               id: userId,
@@ -148,22 +150,26 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Set user profile with role from database
-        setUserProfile({
-          id: userId,
-          email: user?.email || '',
-          role: userData.role || 'fan',
-          is_kyc_complete: userData.is_kyc_complete || false
-        });
+        console.log('Found existing user data:', userData);
 
-        // Then fetch the detailed profile data
+        // Fetch the detailed profile data from user_profiles table
         const profileResult = await profileService.getProfile(userId);
-        if (profileResult.success && profileResult.data) {
-          setUserProfile(prev => ({
-            ...prev,
-            profile: profileResult.data
-          }));
-        }
+        console.log('Profile fetch result:', profileResult);
+
+        // Merge user data with profile data
+        const mergedProfile = {
+          id: userId,
+          email: userData.email || user?.email || '',
+          role: userData.role || 'fan',
+          is_kyc_complete: userData.is_kyc_complete || false,
+          created_at: userData.created_at,
+          updated_at: userData.updated_at,
+          // Merge profile data directly into the main userProfile object
+          ...(profileResult.success && profileResult.data ? profileResult.data : {})
+        };
+
+        console.log('Setting merged user profile:', mergedProfile);
+        setUserProfile(mergedProfile);
       })();
 
       // Race between profile fetch and timeout

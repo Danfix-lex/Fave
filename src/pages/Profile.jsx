@@ -121,26 +121,25 @@ const Profile = () => {
 
   useEffect(() => {
     if (userProfile) {
-      // Get profile data from either userProfile.profile or userProfile directly
-      const profileData = userProfile.profile || userProfile;
+      console.log('Profile component - userProfile updated:', userProfile);
       
       setFormData({
-        full_name: profileData.full_name || '',
-        stage_name: profileData.stage_name || '',
-        id_number: profileData.id_number || '',
-        id_type: profileData.id_type || '',
-        profile_photo_url: profileData.profile_photo_url || '',
-        date_of_birth: profileData.date_of_birth || '',
-        nationality: profileData.nationality || '',
-        phone_number: profileData.phone_number || '',
-        bio: profileData.bio || '',
-        social_media: profileData.social_media || {
+        full_name: userProfile.full_name || '',
+        stage_name: userProfile.stage_name || '',
+        id_number: userProfile.id_number || '',
+        id_type: userProfile.id_type || '',
+        profile_photo_url: userProfile.profile_photo_url || '',
+        date_of_birth: userProfile.date_of_birth || '',
+        nationality: userProfile.nationality || '',
+        phone_number: userProfile.phone_number || '',
+        bio: userProfile.bio || '',
+        social_media: userProfile.social_media || {
           instagram: '',
           twitter: '',
           youtube: '',
           spotify: ''
         },
-        address: profileData.address || {
+        address: userProfile.address || {
           street: '',
           city: '',
           state: '',
@@ -289,24 +288,23 @@ const Profile = () => {
     setSuccess('');
     // Reset form data to original values
     if (userProfile) {
-      const profileData = userProfile.profile || userProfile;
       setFormData({
-        full_name: profileData.full_name || '',
-        stage_name: profileData.stage_name || '',
-        id_number: profileData.id_number || '',
-        id_type: profileData.id_type || '',
-        profile_photo_url: profileData.profile_photo_url || '',
-        date_of_birth: profileData.date_of_birth || '',
-        nationality: profileData.nationality || '',
-        phone_number: profileData.phone_number || '',
-        bio: profileData.bio || '',
-        social_media: profileData.social_media || {
+        full_name: userProfile.full_name || '',
+        stage_name: userProfile.stage_name || '',
+        id_number: userProfile.id_number || '',
+        id_type: userProfile.id_type || '',
+        profile_photo_url: userProfile.profile_photo_url || '',
+        date_of_birth: userProfile.date_of_birth || '',
+        nationality: userProfile.nationality || '',
+        phone_number: userProfile.phone_number || '',
+        bio: userProfile.bio || '',
+        social_media: userProfile.social_media || {
           instagram: '',
           twitter: '',
           youtube: '',
           spotify: ''
         },
-        address: profileData.address || {
+        address: userProfile.address || {
           street: '',
           city: '',
           state: '',
@@ -432,7 +430,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Full Name</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.full_name || 'Not provided'}
+                    {userProfile?.full_name || 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -443,7 +441,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Date of Birth</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.date_of_birth || 'Not provided'}
+                    {userProfile?.date_of_birth || 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -454,7 +452,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Nationality</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.nationality || 'Not provided'}
+                    {userProfile?.nationality || 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -465,7 +463,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Phone Number</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.phone_number || 'Not provided'}
+                    {userProfile?.phone_number || 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -578,15 +576,15 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">Address</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.address?.street || 'Not provided'}
+                    {userProfile?.address?.street || 'Not provided'}
                   </Typography>
                   <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {(userProfile?.profile || userProfile)?.address?.city && (userProfile?.profile || userProfile)?.address?.state && 
-                     `${(userProfile?.profile || userProfile).address.city}, ${(userProfile?.profile || userProfile).address.state}`}
+                    {userProfile?.address?.city && userProfile?.address?.state && 
+                     `${userProfile.address.city}, ${userProfile.address.state}`}
                   </Typography>
                   <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {(userProfile?.profile || userProfile)?.address?.country && (userProfile?.profile || userProfile)?.address?.postal_code && 
-                     `${(userProfile?.profile || userProfile).address.country} ${(userProfile?.profile || userProfile).address.postal_code}`}
+                    {userProfile?.address?.country && userProfile?.address?.postal_code && 
+                     `${userProfile.address.country} ${userProfile.address.postal_code}`}
                   </Typography>
                 </Box>
               </Box>
@@ -676,7 +674,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">ID Type</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.id_type ? (userProfile?.profile || userProfile).id_type.replace('_', ' ').toUpperCase() : 'Not provided'}
+                    {userProfile?.id_type ? userProfile.id_type.replace('_', ' ').toUpperCase() : 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -687,7 +685,7 @@ const Profile = () => {
                 <Box>
                   <Typography variant="body2" color="text.secondary">ID Number</Typography>
                   <Typography variant="h6" sx={{ color: 'white' }}>
-                    {(userProfile?.profile || userProfile)?.id_number ? '••••••••' + (userProfile?.profile || userProfile).id_number.slice(-4) : 'Not provided'}
+                    {userProfile?.id_number ? '••••••••' + userProfile.id_number.slice(-4) : 'Not provided'}
                   </Typography>
                 </Box>
               </Box>
@@ -715,7 +713,7 @@ const Profile = () => {
 
         <Box sx={{ textAlign: 'center' }}>
           <Avatar
-            src={(userProfile?.profile || userProfile)?.profile_photo_url || photoPreview}
+            src={userProfile?.profile_photo_url || photoPreview}
             sx={{ 
               width: 150, 
               height: 150, 
@@ -902,7 +900,7 @@ const Profile = () => {
                   <Box>
                     <Typography variant="body2" color="text.secondary">Stage Name</Typography>
                     <Typography variant="h6" sx={{ color: 'white' }}>
-                      {(userProfile?.profile || userProfile)?.stage_name || 'Not provided'}
+                      {userProfile?.stage_name || 'Not provided'}
                     </Typography>
                   </Box>
                 </Box>
@@ -913,7 +911,7 @@ const Profile = () => {
                   <Box>
                     <Typography variant="body2" color="text.secondary">Bio</Typography>
                     <Typography variant="body1" sx={{ color: 'white' }}>
-                      {(userProfile?.profile || userProfile)?.bio || 'No bio provided'}
+                      {userProfile?.bio || 'No bio provided'}
                     </Typography>
                   </Box>
                 </Box>
@@ -921,42 +919,42 @@ const Profile = () => {
               <Grid item xs={12}>
                 <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>Social Media</Typography>
                 <Grid container spacing={2}>
-                  {(userProfile?.profile || userProfile)?.social_media?.instagram && (
+                  {userProfile?.social_media?.instagram && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Instagram color="primary" />
                         <Typography variant="body2" sx={{ color: 'white' }}>
-                          @{(userProfile?.profile || userProfile).social_media.instagram}
+                          @{userProfile.social_media.instagram}
                         </Typography>
                       </Box>
                     </Grid>
                   )}
-                  {(userProfile?.profile || userProfile)?.social_media?.twitter && (
+                  {userProfile?.social_media?.twitter && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Twitter color="primary" />
                         <Typography variant="body2" sx={{ color: 'white' }}>
-                          @{(userProfile?.profile || userProfile).social_media.twitter}
+                          @{userProfile.social_media.twitter}
                         </Typography>
                       </Box>
                     </Grid>
                   )}
-                  {(userProfile?.profile || userProfile)?.social_media?.youtube && (
+                  {userProfile?.social_media?.youtube && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <YouTube color="primary" />
                         <Typography variant="body2" sx={{ color: 'white' }}>
-                          {(userProfile?.profile || userProfile).social_media.youtube}
+                          {userProfile.social_media.youtube}
                         </Typography>
                       </Box>
                     </Grid>
                   )}
-                  {(userProfile?.profile || userProfile)?.social_media?.spotify && (
+                  {userProfile?.social_media?.spotify && (
                     <Grid item xs={12} md={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <MusicNote color="primary" />
                         <Typography variant="body2" sx={{ color: 'white' }}>
-                          {(userProfile?.profile || userProfile).social_media.spotify}
+                          {userProfile.social_media.spotify}
                         </Typography>
                       </Box>
                     </Grid>
@@ -1046,12 +1044,12 @@ const Profile = () => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                   <Avatar
-                    src={(userProfile?.profile || userProfile)?.profile_photo_url}
+                    src={userProfile?.profile_photo_url}
                     sx={{ width: 80, height: 80, border: '3px solid #2196f3' }}
                   />
                   <Box sx={{ textAlign: 'left', flex: 1 }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 600 }}>
-                      {(userProfile?.profile || userProfile)?.full_name || 'User'}
+                      {userProfile?.full_name || 'User'}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                       {userProfile?.email}
@@ -1061,9 +1059,9 @@ const Profile = () => {
                       color={userProfile?.role === 'creator' ? 'primary' : 'secondary'}
                       sx={{ mt: 1 }}
                     />
-                    {(userProfile?.profile || userProfile)?.stage_name && (
+                    {userProfile?.stage_name && (
                       <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', mt: 1 }}>
-                        Stage Name: {(userProfile?.profile || userProfile).stage_name}
+                        Stage Name: {userProfile.stage_name}
                       </Typography>
                     )}
                   </Box>

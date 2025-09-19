@@ -167,7 +167,7 @@ const Dashboard = () => {
 
   // Debug logging
   console.log('Dashboard - userProfile:', userProfile);
-  console.log('Dashboard - userProfile.profile:', userProfile?.profile);
+  console.log('Dashboard - userProfile.is_kyc_complete:', userProfile?.is_kyc_complete);
 
   if (!userProfile) {
     return (
