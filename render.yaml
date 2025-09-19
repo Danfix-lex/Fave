@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: fave-app
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
