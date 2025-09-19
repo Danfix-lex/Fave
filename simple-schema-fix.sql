@@ -45,10 +45,20 @@ ADD COLUMN IF NOT EXISTS stage_name TEXT;
 ALTER TABLE public.user_profiles 
 ADD COLUMN IF NOT EXISTS distributor_id UUID;
 
--- Add foreign key constraint for distributor_id
-ALTER TABLE public.user_profiles 
-ADD CONSTRAINT IF NOT EXISTS user_profiles_distributor_id_fkey 
-FOREIGN KEY (distributor_id) REFERENCES public.distributors(id);
+-- Add foreign key constraint for distributor_id (only if it doesn't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE table_name = 'user_profiles' 
+    AND table_schema = 'public' 
+    AND constraint_name = 'user_profiles_distributor_id_fkey'
+  ) THEN
+    ALTER TABLE public.user_profiles 
+    ADD CONSTRAINT user_profiles_distributor_id_fkey 
+    FOREIGN KEY (distributor_id) REFERENCES public.distributors(id);
+  END IF;
+END $$;
 
 -- Verify the columns were added
 SELECT column_name, data_type 
