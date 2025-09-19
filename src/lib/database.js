@@ -130,16 +130,30 @@ export const profileService = {
   // Get user profile
   async getProfile(userId) {
     try {
+      // First try to get basic profile data without problematic columns
       const { data, error } = await supabase
         .from('user_profiles')
         .select(`
-          *,
+          id,
+          user_id,
+          full_name,
+          stage_name,
+          profile_photo_url,
+          distributor_id,
+          created_at,
+          updated_at,
           distributor:distributors(name)
         `)
         .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If the table doesn't exist or has issues, return null
+        if (error.code === 'PGRST116' || error.message.includes('relation "user_profiles" does not exist')) {
+          return { success: true, data: null };
+        }
+        throw error;
+      }
       return { success: true, data };
     } catch (error) {
       return { success: false, error: handleSupabaseError(error, 'getProfile') };
@@ -149,14 +163,40 @@ export const profileService = {
   // Create or update profile
   async upsertProfile(profileData) {
     try {
+      // Filter out potentially missing columns to avoid 406 errors
+      const safeProfileData = {
+        user_id: profileData.user_id,
+        full_name: profileData.full_name || null,
+        stage_name: profileData.stage_name || null,
+        profile_photo_url: profileData.profile_photo_url || null,
+        distributor_id: profileData.distributor_id || null,
+        // Only include these if they exist in the schema
+        ...(profileData.address && { address: profileData.address }),
+        ...(profileData.social_media && { social_media: profileData.social_media }),
+        ...(profileData.bio && { bio: profileData.bio }),
+        ...(profileData.date_of_birth && { date_of_birth: profileData.date_of_birth }),
+        ...(profileData.nationality && { nationality: profileData.nationality }),
+        ...(profileData.phone_number && { phone_number: profileData.phone_number }),
+        ...(profileData.id_type && { id_type: profileData.id_type }),
+        ...(profileData.id_number && { id_number: profileData.id_number }),
+        ...(profileData.id_document_url && { id_document_url: profileData.id_document_url }),
+      };
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert(profileData, { 
+        .upsert(safeProfileData, { 
           onConflict: 'user_id',
           ignoreDuplicates: false 
         })
         .select(`
-          *,
+          id,
+          user_id,
+          full_name,
+          stage_name,
+          profile_photo_url,
+          distributor_id,
+          created_at,
+          updated_at,
           distributor:distributors(name)
         `)
         .single();
