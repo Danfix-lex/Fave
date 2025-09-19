@@ -163,12 +163,20 @@ const Dashboard = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '400px',
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
         }}
       >
-        <CircularProgress size={40} />
+        <CircularProgress size={60} sx={{ color: 'white', mb: 2 }} />
+        <Typography variant="h6" sx={{ color: 'white' }}>
+          Loading your profile...
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mt: 1 }}>
+          This may take a few moments
+        </Typography>
       </Box>
     );
   }

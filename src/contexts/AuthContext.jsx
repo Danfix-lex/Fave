@@ -20,8 +20,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Fallback timeout to ensure loading is never stuck
     const fallbackTimeout = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing loading to false');
       setLoading(false);
-    }, 2000);
+    }, 10000); // Increased to 10 seconds
 
     // Get initial session
     const getSession = async () => {
@@ -29,11 +30,12 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
-          // Fetch user profile from database
+          // Fetch user profile from database with timeout
           await fetchFullProfile(session.user.id);
         }
         setLoading(false);
       } catch (error) {
+        console.error('Session fetch error:', error);
         setLoading(false);
       }
     };
@@ -44,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
-        // Fetch full profile from database
+        // Fetch full profile from database with timeout
         await fetchFullProfile(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -98,28 +100,44 @@ export const AuthProvider = ({ children }) => {
 
   const fetchFullProfile = async (userId) => {
     try {
-      // First, get the user's role and basic info from users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role, is_kyc_complete')
-        .eq('id', userId)
-        .single();
-
-      if (userError) {
-        // If user doesn't exist in users table, create them
-        const { error: insertError } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+      
+      const profilePromise = (async () => {
+        // First, get the user's role and basic info from users table
+        const { data: userData, error: userError } = await supabase
           .from('users')
-          .insert([{
-            id: userId,
-            email: user?.email || '',
-            role: 'fan',
-            is_kyc_complete: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
+          .select('role, is_kyc_complete')
+          .eq('id', userId)
+          .single();
 
-        if (insertError) {
-          // Set default profile if database operations fail
+        if (userError) {
+          // If user doesn't exist in users table, create them
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([{
+              id: userId,
+              email: user?.email || '',
+              role: 'fan',
+              is_kyc_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+
+          if (insertError) {
+            // Set default profile if database operations fail
+            setUserProfile({
+              id: userId,
+              email: user?.email || '',
+              role: 'fan',
+              is_kyc_complete: false
+            });
+            return;
+          }
+
+          // Set default profile for new user
           setUserProfile({
             id: userId,
             email: user?.email || '',
@@ -129,33 +147,29 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Set default profile for new user
+        // Set user profile with role from database
         setUserProfile({
           id: userId,
           email: user?.email || '',
-          role: 'fan',
-          is_kyc_complete: false
+          role: userData.role || 'fan',
+          is_kyc_complete: userData.is_kyc_complete || false
         });
-        return;
-      }
 
-      // Set user profile with role from database
-      setUserProfile({
-        id: userId,
-        email: user?.email || '',
-        role: userData.role || 'fan',
-        is_kyc_complete: userData.is_kyc_complete || false
-      });
+        // Then fetch the detailed profile data
+        const profileResult = await profileService.getProfile(userId);
+        if (profileResult.success && profileResult.data) {
+          setUserProfile(prev => ({
+            ...prev,
+            profile: profileResult.data
+          }));
+        }
+      })();
 
-      // Then fetch the detailed profile data
-      const profileResult = await profileService.getProfile(userId);
-      if (profileResult.success && profileResult.data) {
-        setUserProfile(prev => ({
-          ...prev,
-          profile: profileResult.data
-        }));
-      }
+      // Race between profile fetch and timeout
+      await Promise.race([profilePromise, timeoutPromise]);
+      
     } catch (error) {
+      console.error('Profile fetch error:', error);
       // Set a basic profile to prevent infinite loading
       setUserProfile({
         id: userId,
