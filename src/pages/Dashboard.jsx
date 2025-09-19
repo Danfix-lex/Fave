@@ -167,6 +167,7 @@ const Dashboard = () => {
 
   // Debug logging
   console.log('Dashboard - userProfile:', userProfile);
+  console.log('Dashboard - userProfile.profile:', userProfile?.profile);
 
   if (!userProfile) {
     return (

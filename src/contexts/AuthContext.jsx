@@ -297,39 +297,27 @@ export const AuthProvider = ({ children }) => {
         console.log('AuthContext - profile upsert result:', result);
         
         if (result.success) {
+          // Update KYC status in users table
+          console.log('AuthContext - updating KYC status for user:', user.id);
+          const kycResult = await userService.updateKYCStatus(user.id, true);
+          console.log('AuthContext - KYC update result:', kycResult);
+          
+          // Update userProfile with both profile data and KYC status
           setUserProfile(prev => {
             const newProfile = {
               ...prev,
+              is_kyc_complete: true,
               profile: result.data
             };
-            console.log('AuthContext - updated userProfile with profile:', newProfile);
+            console.log('AuthContext - updated userProfile with profile and KYC:', newProfile);
             return newProfile;
           });
+
+          return { success: true };
         } else {
           console.error('AuthContext - profile upsert failed:', result.error);
           return { error: result.error };
         }
-        
-        // Update KYC status in users table
-        console.log('AuthContext - updating KYC status for user:', user.id);
-        const kycResult = await userService.updateKYCStatus(user.id, true);
-        console.log('AuthContext - KYC update result:', kycResult);
-        
-        if (kycResult.success) {
-          setUserProfile(prev => {
-            const newProfile = {
-              ...prev,
-              is_kyc_complete: true
-            };
-            console.log('AuthContext - updated userProfile with KYC complete:', newProfile);
-            return newProfile;
-          });
-        } else {
-          console.error('AuthContext - KYC update failed:', kycResult.error);
-          return { error: kycResult.error };
-        }
-
-        return { success: true };
       }
       return { error: new Error('User not found') };
     } catch (error) {
