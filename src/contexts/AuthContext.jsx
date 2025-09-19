@@ -156,6 +156,30 @@ export const AuthProvider = ({ children }) => {
         const profileResult = await profileService.getProfile(userId);
         console.log('Profile fetch result:', profileResult);
 
+        // Check if user has KYC data even if is_kyc_complete is false
+        const hasKYCData = profileResult.success && profileResult.data && (
+          profileResult.data.full_name ||
+          profileResult.data.id_number ||
+          profileResult.data.address ||
+          profileResult.data.phone_number
+        );
+
+        console.log('Has KYC data check:', hasKYCData);
+
+        // If user has KYC data but is_kyc_complete is false, update it
+        if (hasKYCData && !userData.is_kyc_complete) {
+          console.log('User has KYC data but is_kyc_complete is false, updating...');
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ is_kyc_complete: true })
+            .eq('id', userId);
+
+          if (!updateError) {
+            userData.is_kyc_complete = true;
+            console.log('Updated user KYC status to true');
+          }
+        }
+
         // Merge user data with profile data
         const mergedProfile = {
           id: userId,
