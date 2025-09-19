@@ -35,25 +35,25 @@ function App() {
           <Routes>
             {/* Public routes with header and footer */}
             <Route path="/" element={
-              <AuthenticatedRedirect>
+              <>
                 <Header />
                 <Landing />
                 <Footer />
-              </AuthenticatedRedirect>
+              </>
             } />
             <Route path="/about" element={
-              <AuthenticatedRedirect>
+              <>
                 <Header />
                 <About />
                 <Footer />
-              </AuthenticatedRedirect>
+              </>
             } />
             <Route path="/contact" element={
-              <AuthenticatedRedirect>
+              <>
                 <Header />
                 <Contact />
                 <Footer />
-              </AuthenticatedRedirect>
+              </>
             } />
             <Route path="/upcoming" element={
               <>

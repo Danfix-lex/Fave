@@ -58,8 +58,8 @@ const AuthCallback = () => {
           // non-fatal
         }
 
-        // Redirect post-login to Landing page with a full reload to ensure header sees session
-        window.location.replace('/');
+        // Redirect post-login to Dashboard
+        window.location.replace('/dashboard');
       } catch (e) {
         setError(e.message || 'Authentication failed');
       }

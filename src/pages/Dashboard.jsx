@@ -196,7 +196,7 @@ const Dashboard = () => {
   }
 
   // If KYC is not complete, redirect to KYC
-  if (userProfile && !userProfile.is_kyc_complete) {
+  if (userProfile && userProfile.is_kyc_complete === false) {
     return <Navigate to="/kyc" replace />;
   }
 
